@@ -1,4 +1,4 @@
-# CIS 9660 — Data Mining for Business Analytics
+# Data Mining for Business Analytics
 
 Repository for term project work completed as part of CIS/STA 9660 at Baruch College, Spring 2026.
 
