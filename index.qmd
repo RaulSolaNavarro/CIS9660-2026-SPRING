@@ -58,7 +58,6 @@ CIS 9660 - Data Mining
 |-----------|-------|
 | 📊 **Domain** | E-commerce & Retail - Telecom Customer Retention |
 | 🎯 **Task Type** | Binary Classification (Churn: Yes / No) |
-| 🔍 **Complexity** | Medium |
 | 🧪 **Primary Method** | Logistic Regression with Interaction Terms |
 
 ---
