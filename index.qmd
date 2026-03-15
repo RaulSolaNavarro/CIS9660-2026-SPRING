@@ -31,7 +31,7 @@ execute:
 - **Harrison Cabe**
 - **Raúl J. Solá Navarro**
 - **Samuel Spitzer**
-- **Vitor Murra Schott**
+- **Victor Murra Schott**
 
 :::
 ::: {.column width="50%"}
