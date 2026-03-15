@@ -1,0 +1,79 @@
+[
+  {
+    "objectID": "index.html#team-members",
+    "href": "index.html#team-members",
+    "title": "Customer Churn Prediction Analysis",
+    "section": "Team Members",
+    "text": "Team Members\n\n\nOur Team\n\nHarrison Cabe\nRaúl J. Solá Navarro\nSamuel Spitzer\nVitor Murra Schott\n\n\nCourse\nCIS 9660 - Data Mining\nProposal Due: March 20, 2026\nPresentation: March 16, 2026"
+  },
+  {
+    "objectID": "index.html#project-overview",
+    "href": "index.html#project-overview",
+    "title": "Customer Churn Prediction Analysis",
+    "section": "Project Overview",
+    "text": "Project Overview\n\n\n\nThe Big Question\n\n\nCan we predict whether a telecom customer will churn based on their contract type, monthly charges, and service usage?\n\n\n\n\n\n\n\nDimension\nFocus\n\n\n\n\n📊 Domain\nE-commerce & Retail - Telecom Customer Retention\n\n\n🎯 Task Type\nBinary Classification (Churn: Yes / No)\n\n\n🧪 Primary Method\nLogistic Regression with Interaction Terms"
+  },
+  {
+    "objectID": "index.html#dataset",
+    "href": "index.html#dataset",
+    "title": "Customer Churn Prediction Analysis",
+    "section": "Dataset",
+    "text": "Dataset\n\n\nKaggle: Telco Customer Churn\n🔗 kaggle.com/datasets/blastchar/telco-customer-churn\n\n\n\nProperty\nValue\n\n\n\n\nObservations\n7,043 customers\n\n\nVariables\n21 features\n\n\nTarget\nChurn (Yes / No)\n\n\n\n\nFeature Groups\nDemographics\nGender, Senior Citizen, Partner, Dependents\nServices\nPhone, Internet, Streaming, Security\nAccount\nContract, Tenure, Monthly/Total Charges, Payment Method"
+  },
+  {
+    "objectID": "index.html#key-variables",
+    "href": "index.html#key-variables",
+    "title": "Customer Churn Prediction Analysis",
+    "section": "Key Variables",
+    "text": "Key Variables\n\n\n🎯 Target\nChurn — Binary: Yes / No\n📌 Primary Predictors\n\nContract - Month-to-month, One year, Two year\n\nMonthlyCharges - Continuous (USD)\n\nInternetService - DSL, Fiber Optic, None\n\ntenure - Months with company\n\n\n\n📎 Additional Features\n\nTotalCharges\nPaymentMethod\nPaperlessBilling\nOnlineSecurity, TechSupport\nStreamingTV, StreamingMovies"
+  },
+  {
+    "objectID": "index.html#research-question",
+    "href": "index.html#research-question",
+    "title": "Customer Churn Prediction Analysis",
+    "section": "Research Question",
+    "text": "Research Question\n\n\nCan we predict customer churn from\ncontract type and monthly charges?\n\n\n\n\n🔮 Predictive\nBuild a model that accurately classifies customers as likely to churn or stay\n\n🔬 Inferential\nDoes the interaction between InternetService × tenure significantly affect churn probability?"
+  },
+  {
+    "objectID": "index.html#methods-eda",
+    "href": "index.html#methods-eda",
+    "title": "Customer Churn Prediction Analysis",
+    "section": "Methods: EDA",
+    "text": "Methods: EDA\nStep 1 - Exploratory Data Analysis\n\n\n📦 Boxplots\nCompare MonthlyCharges and tenure distributions across churn classes\n\n🔵 Scatterplots\nExplore relationships between continuous variables (MonthlyCharges, tenure, TotalCharges) and churn\n\n📊 Bar Charts\nChurn rates segmented by ContractType, InternetService, and PaymentMethod\n\n\n\nTools: pandas, matplotlib, seaborn"
+  },
+  {
+    "objectID": "index.html#methods-logistic-regression",
+    "href": "index.html#methods-logistic-regression",
+    "title": "Customer Churn Prediction Analysis",
+    "section": "Methods: Logistic Regression",
+    "text": "Methods: Logistic Regression\nStep 2 - Binary Logistic Regression\n\nBaseline model - ContractType + MonthlyCharges + InternetService + tenure\nInteraction term - ContractType × InternetService to test synergy effects on churn probability\nModel evaluation - Confusion matrix, Accuracy, Precision, Recall, F1-Score, ROC-AUC\nCross-validation - k-fold CV to assess generalizability\n\n\n\nTools: scikit-learn, statsmodels"
+  },
+  {
+    "objectID": "index.html#expected-findings",
+    "href": "index.html#expected-findings",
+    "title": "Customer Churn Prediction Analysis",
+    "section": "Expected Findings",
+    "text": "Expected Findings\n\n\n📈 Hypotheses\n\nMonth-to-month contract customers will have significantly higher churn rates\nHigher MonthlyCharges correlates with increased churn risk\nFiber optic + short tenure customers may show elevated churn (interaction effect)\n\n\n📐 Model Performance Targets\n\n\n\nMetric\nTarget\n\n\n\n\nAccuracy\n≥ 80%\n\n\nROC-AUC\n≥ 0.80\n\n\nRecall (Churn=Yes)\n≥ 75%\n\n\n\nRecall prioritized — cost of missing a churner is high"
+  },
+  {
+    "objectID": "index.html#practical-implications",
+    "href": "index.html#practical-implications",
+    "title": "Customer Churn Prediction Analysis",
+    "section": "Practical Implications",
+    "text": "Practical Implications\n\n\n\n🎯 Targeted Retention\nSend personalized offers - e.g., upgrade a month-to-month user to a discounted annual contract\n💰 Pricing Strategy\nRestructure pricing tiers or offer loyalty discounts to high-charge, high-risk customers\n\n📈 CLV Optimization\nRetaining customers longer directly increases Customer Lifetime Value\n🔧 Service Improvement\nHigh churn among fiber optic users may signal service quality issues to investigate"
+  },
+  {
+    "objectID": "index.html#project-timeline",
+    "href": "index.html#project-timeline",
+    "title": "Customer Churn Prediction Analysis",
+    "section": "Project Timeline",
+    "text": "Project Timeline\n\n\n\n\n\n\n\n\nMilestone\nDate\nDeliverable\n\n\n\n\n🗣️ In-Class Presentation\nMarch 16, 2026\nSlides (email by March 15)\n\n\n📋 Project Proposal\nMarch 20, 2026\n1–2 page writeup (Brightspace)\n\n\n💻 Final Presentation\nMay 11, 2026\n10-min talk + Q&A\n\n\n📄 Final Report\nMay 15, 2026\n4–5 page report + Python code + data\n\n\n⭐ Peer Evaluation\nMay 15, 2026\n0–5 scale per teammate"
+  },
+  {
+    "objectID": "index.html#summary",
+    "href": "index.html#summary",
+    "title": "Customer Churn Prediction Analysis",
+    "section": "Summary",
+    "text": "Summary\n\n\n\nDataset: Telco Customer Churn (Kaggle)\n7,043 obs × 21 variables\nQuestion: Can contract type & monthly charges predict churn?\nMethod: Logistic Regression + Interaction Terms\nContractType × InternetService\nGoal: Help marketing teams proactively retain at-risk customers"
+  }
+]
