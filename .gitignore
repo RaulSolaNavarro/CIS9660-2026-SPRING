@@ -1,0 +1,13 @@
+/.quarto/
+/_site/
+/index_files/
+*.html
+!index.html
+.DS_Store
+__pycache__/
+*.pyc
+.Rhistory
+.RData
+
+**/*.quarto_ipynb
+.Rproj.user
