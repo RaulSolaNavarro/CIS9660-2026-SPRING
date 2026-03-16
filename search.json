@@ -53,7 +53,7 @@
     "href": "index.html#expected-findings",
     "title": "Customer Churn Prediction Analysis",
     "section": "Expected Findings",
-    "text": "Expected Findings\n\n\n📈 Hypotheses\n\nMonth-to-month contract customers will have significantly higher churn rates\nHigher MonthlyCharges correlates with increased churn risk\nFiber optic + short tenure customers may show elevated churn (interaction effect)\n\n\n📐 Model Performance Targets\n\n\n\nMetric\nTarget\n\n\n\n\nAccuracy\n≥ 80%\n\n\nROC-AUC\n≥ 0.80\n\n\nRecall (Churn=Yes)\n≥ 75%\n\n\n\nRecall prioritized — cost of missing a churner is high"
+    "text": "Expected Findings\n\n\n📈 Hypotheses\n\nMonth-to-month contract customers will have significantly higher churn rates\nHigher MonthlyCharges correlates with increased churn risk\nFiber optic + short tenure customers may show elevated churn (interaction effect)\n\n\n📐 Model Performance Targets\n\n\n\nMetric\nTarget\n\n\n\n\nAccuracy\n≥ 80%\n\n\nROC-AUC\n≥ 0.80\n\n\nRecall (Churn=Yes)\n≥ 75%\n\n\n\nRecall prioritized - cost of missing a churner is high"
   },
   {
     "objectID": "index.html#practical-implications",
