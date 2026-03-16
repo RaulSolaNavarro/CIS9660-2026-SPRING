@@ -68,7 +68,7 @@ CIS 9660 - Data Mining
 ::: {.column width="60%"}
 ### Kaggle: Telco Customer Churn
 
-🔗 `kaggle.com/datasets/blastchar/telco-customer-churn`
+🔗 [`kaggle.com/datasets/blastchar/telco-customer-churn`](https://www.kaggle.com/datasets/blastchar/telco-customer-churn)
 
 | Property | Value |
 |----------|-------|
