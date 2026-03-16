@@ -97,7 +97,7 @@ Contract, Tenure, Monthly/Total Charges, Payment Method
 ::: {.columns}
 ::: {.column width="50%"}
 ### 🎯 Target
-`Churn` — Binary: **Yes / No**
+`Churn` - Binary: **Yes / No**
 
 ### 📌 Primary Predictors
 - `Contract` - Month-to-month, One year, Two year  
