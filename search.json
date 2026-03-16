@@ -25,7 +25,7 @@
     "href": "index.html#key-variables",
     "title": "Customer Churn Prediction Analysis",
     "section": "Key Variables",
-    "text": "Key Variables\n\n\n🎯 Target\nChurn — Binary: Yes / No\n📌 Primary Predictors\n\nContract - Month-to-month, One year, Two year\n\nMonthlyCharges - Continuous (USD)\n\nInternetService - DSL, Fiber Optic, None\n\ntenure - Months with company\n\n\n\n📎 Additional Features\n\nTotalCharges\nPaymentMethod\nPaperlessBilling\nOnlineSecurity, TechSupport\nStreamingTV, StreamingMovies"
+    "text": "Key Variables\n\n\n🎯 Target\nChurn - Binary: Yes / No\n📌 Primary Predictors\n\nContract - Month-to-month, One year, Two year\n\nMonthlyCharges - Continuous (USD)\n\nInternetService - DSL, Fiber Optic, None\n\ntenure - Months with company\n\n\n\n📎 Additional Features\n\nTotalCharges\nPaymentMethod\nPaperlessBilling\nOnlineSecurity, TechSupport\nStreamingTV, StreamingMovies"
   },
   {
     "objectID": "index.html#research-question",
