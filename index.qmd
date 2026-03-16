@@ -204,7 +204,7 @@ Churn rates segmented by `ContractType`, `InternetService`, and `PaymentMethod`
 | ROC-AUC | ≥ 0.80 |
 | Recall (Churn=Yes) | ≥ 75% |
 
-*Recall prioritized — cost of missing a churner is high*
+*Recall prioritized - cost of missing a churner is high*
 :::
 :::
 
