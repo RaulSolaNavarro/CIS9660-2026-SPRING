@@ -1,6 +1,20 @@
 project:
   type: website
   output-dir: _site
+  execute-dir: project
 
 website:
-  title: "CIS 9660 - Group 2 Project Proposal"
+  title: "CIS 9660 — Group 2 Project"
+  navbar:
+    left:
+      - text: "Proposal Slides"
+        href: index.qmd
+      - text: "Final Report"
+        href: churn-report.qmd
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    number-sections: true
