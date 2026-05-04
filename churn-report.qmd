@@ -40,8 +40,6 @@ The predictor variables fall into three groups:
 - **Services:** `PhoneService`, `MultipleLines`, `InternetService`, `OnlineSecurity`, `OnlineBackup`, `DeviceProtection`, `TechSupport`, `StreamingTV`, `StreamingMovies`
 - **Account:** `Contract`, `tenure`, `MonthlyCharges`, `TotalCharges`, `PaymentMethod`, `PaperlessBilling`
 
-During data cleaning, `11` rows were dropped because `TotalCharges` was blank for customers with zero tenure (brand new accounts with no billing history yet), leaving a working dataset of `7,032` observations. `TotalCharges` was also removed from the model because it is almost entirely determined by `tenure` (correlation of `0.83`), which would distort the model's coefficient estimates. The `Churn` column was converted to a binary integer (`1` = churned, `0` = stayed).
-
 ```{python}
 #| label: setup
 
@@ -49,7 +47,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split, StratifiedKFold, cross_validate
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (classification_report, roc_auc_score,
@@ -58,42 +56,96 @@ from sklearn.metrics import (classification_report, roc_auc_score,
 URL = "https://raw.githubusercontent.com/RaulSolaNavarro/CIS9660-2026-SPRING/main/data/Telco-Customer-Churn.csv"
 df = pd.read_csv(URL)
 
-# Cleaning
+# ── Cleaning (Sammy) ──────────────────────────────────────────────────────────
 df['TotalCharges'] = pd.to_numeric(df['TotalCharges'], errors='coerce')
-n_dropped = df['TotalCharges'].isnull().sum()
-df = df.dropna(subset=['TotalCharges'])
-df['Churn'] = df['Churn'].map({'Yes': 1, 'No': 0})
-df['SeniorCitizen'] = df['SeniorCitizen'].map({1: 'Yes', 0: 'No'})
+n_dropped = int(df['TotalCharges'].isnull().sum())
+df = df.dropna()
+
+# Collapse "No <service> service" into "No" (Sammy)
+df['MultipleLines']     = df['MultipleLines'].replace('No phone service', 'No')
+df['OnlineSecurity']    = df['OnlineSecurity'].replace('No internet service', 'No')
+df['OnlineBackup']      = df['OnlineBackup'].replace('No internet service', 'No')
+df['DeviceProtection']  = df['DeviceProtection'].replace('No internet service', 'No')
+df['TechSupport']       = df['TechSupport'].replace('No internet service', 'No')
+df['StreamingTV']       = df['StreamingTV'].replace('No internet service', 'No')
+df['StreamingMovies']   = df['StreamingMovies'].replace('No internet service', 'No')
+
+# Binary encoding using .map() (Sammy)
+df['gender']            = df['gender'].map({'Male': 1, 'Female': 0})
+df['Partner']           = df['Partner'].map({'Yes': 1, 'No': 0})
+df['Dependents']        = df['Dependents'].map({'Yes': 1, 'No': 0})
+df['PhoneService']      = df['PhoneService'].map({'Yes': 1, 'No': 0})
+df['PaperlessBilling']  = df['PaperlessBilling'].map({'Yes': 1, 'No': 0})
+df['Churn']             = df['Churn'].map({'Yes': 1, 'No': 0})
+df['MultipleLines']     = df['MultipleLines'].map({'Yes': 1, 'No': 0})
+df['OnlineSecurity']    = df['OnlineSecurity'].map({'Yes': 1, 'No': 0})
+df['OnlineBackup']      = df['OnlineBackup'].map({'Yes': 1, 'No': 0})
+df['DeviceProtection']  = df['DeviceProtection'].map({'Yes': 1, 'No': 0})
+df['TechSupport']       = df['TechSupport'].map({'Yes': 1, 'No': 0})
+df['StreamingTV']       = df['StreamingTV'].map({'Yes': 1, 'No': 0})
+df['StreamingMovies']   = df['StreamingMovies'].map({'Yes': 1, 'No': 0})
+
+# Fix TotalCharges dtype (Sammy)
+df['TotalCharges'] = pd.to_numeric(df['TotalCharges'], errors='coerce')
+
+# One-hot encode nominal multi-category columns (Sammy)
+df = pd.get_dummies(df, columns=['InternetService', 'Contract', 'PaymentMethod'],
+                    drop_first=True)
+
+# Convert booleans from get_dummies to int (Sammy)
+bool_cols = df.select_dtypes(include='bool').columns
+df[bool_cols] = df[bool_cols].astype(int)
+
+# Drop customerID
+df = df.drop(columns=['customerID'])
+
+# Keep a raw copy for EDA plots that need original category labels
+df_raw = pd.read_csv(URL)
+df_raw['TotalCharges'] = pd.to_numeric(df_raw['TotalCharges'], errors='coerce')
+df_raw = df_raw.dropna()
 
 # ── Inline values ─────────────────────────────────────────────────────────────
-n_obs_raw     = 7043
 n_obs         = len(df)
-n_features    = df.shape[1] - 1
 churn_rate    = df['Churn'].mean()
 no_churn_rate = 1 - churn_rate
 total_charges_tenure_corr = df['TotalCharges'].corr(df['tenure'])
 
-# EDA values
-contract_churn   = df.groupby('Contract')['Churn'].mean()
-mtm_churn        = contract_churn['Month-to-month']
-one_yr_churn     = contract_churn['One year']
-two_yr_churn     = contract_churn['Two year']
+# EDA values from raw labels
+contract_churn  = df_raw.groupby('Contract')['Churn'].apply(
+    lambda x: (x == 'Yes').mean())
+mtm_churn       = contract_churn['Month-to-month']
+two_yr_churn    = contract_churn['Two year']
 
-internet_churn   = df.groupby('InternetService')['Churn'].mean()
-fiber_churn      = internet_churn['Fiber optic']
+internet_churn  = df_raw.groupby('InternetService')['Churn'].apply(
+    lambda x: (x == 'Yes').mean())
+fiber_churn     = internet_churn['Fiber optic']
 
-median_charges_churn    = df[df['Churn']==1]['MonthlyCharges'].median()
-median_charges_no_churn = df[df['Churn']==0]['MonthlyCharges'].median()
-median_tenure_churn     = df[df['Churn']==1]['tenure'].median()
-median_tenure_no_churn  = df[df['Churn']==0]['tenure'].median()
+median_charges_churn    = df_raw[df_raw['Churn']=='Yes']['MonthlyCharges'].median()
+median_charges_no_churn = df_raw[df_raw['Churn']=='No']['MonthlyCharges'].median()
+median_tenure_churn     = df_raw[df_raw['Churn']=='Yes']['tenure'].median()
+median_tenure_no_churn  = df_raw[df_raw['Churn']=='No']['tenure'].median()
 
-tenure_churn_corr   = df['tenure'].corr(df['Churn'])
-monthly_churn_corr  = df['MonthlyCharges'].corr(df['Churn'])
+tenure_churn_corr  = df['tenure'].corr(df['Churn'])
+monthly_churn_corr = df['MonthlyCharges'].corr(df['Churn'])
+
+# Pre-compute feature count for inline use
+_df_temp = df.drop(columns=['Churn', 'TotalCharges'])
+n_features_model = _df_temp.shape[1] + 1  # +1 for the interaction term added later
+del _df_temp
+
+```
+
+During data cleaning, `{python} f"{n_dropped}"` rows were dropped because `TotalCharges` was blank for customers with zero tenure (brand new accounts with no billing history yet), leaving a working dataset of `{python} f"{n_obs:,}"` observations. `TotalCharges` was also removed from the model because it is almost entirely determined by `tenure` (correlation of `{python} f"{total_charges_tenure_corr:.2f}"`), which would distort the model's coefficient estimates. The `Churn` column was converted to a binary integer (`1` = churned, `0` = stayed).
+
+```{python}
+#| label: tbl-summary
+#| tbl-cap: "Dataset Overview"
+#| echo: false
 
 # Summary table
 summary = pd.DataFrame({
     'Variable': ['Observations', 'Features', 'Target', 'Churn Rate'],
-    'Value': [f'{n_obs:,}', str(n_features), 'Churn (Yes/No)', f'{churn_rate:.1%}']
+    'Value': [f'{n_obs:,}', str(df.shape[1] - 1), 'Churn (Yes/No)', f'{churn_rate:.1%}']
 })
 summary.style.hide(axis='index')
 ```
@@ -105,55 +157,47 @@ Before building any models, we looked at how the key variables relate to churn. 
 ```{python}
 #| label: eda-plots
 #| fig-cap: "Exploratory Data Analysis - Key Variables vs Churn"
-#| fig-width: 14
-#| fig-height: 16
 
-fig, axes = plt.subplots(3, 2, figsize=(14, 16))
-fig.suptitle('Exploratory Data Analysis - Telco Customer Churn', fontsize=16, fontweight='bold')
+# Boxplots (Sammy)
+fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+sns.boxplot(x='Churn', y='MonthlyCharges', data=df_raw, ax=axes[0])
+axes[0].set_title('Monthly Charges by Churn')
+axes[0].set_xticklabels(['No Churn', 'Churn'])
+sns.boxplot(x='Churn', y='tenure', data=df_raw, ax=axes[1])
+axes[1].set_title('Tenure by Churn')
+axes[1].set_xticklabels(['No Churn', 'Churn'])
+plt.tight_layout()
+plt.show()
 
-churn_counts = df['Churn'].value_counts()
-axes[0,0].bar(['No Churn (0)', 'Churn (1)'], churn_counts, color=['steelblue','tomato'])
-axes[0,0].set_title('Churn Distribution')
-axes[0,0].set_ylabel('Count')
-for i, v in enumerate(churn_counts):
-    axes[0,0].text(i, v + 30, str(v), ha='center', fontweight='bold')
+# Bar charts by category (Sammy)
+fig, axes = plt.subplots(1, 3, figsize=(16, 5))
 
-contract_churn_plot = df.groupby('Contract')['Churn'].mean().reset_index()
-axes[0,1].bar(contract_churn_plot['Contract'], contract_churn_plot['Churn'], color='steelblue')
-axes[0,1].set_title('Churn Rate by Contract Type')
-axes[0,1].set_ylabel('Churn Rate')
-axes[0,1].set_ylim(0, 0.6)
-for i, row in contract_churn_plot.iterrows():
-    axes[0,1].text(i, row['Churn'] + 0.01, f"{row['Churn']:.1%}", ha='center', fontweight='bold')
+contract_churn_plot = df_raw.groupby('Contract')['Churn'].value_counts(
+    normalize=True).unstack()
+contract_churn_plot.plot(kind='bar', ax=axes[0], colormap='Set2')
+axes[0].set_title('Churn Rate by Contract Type')
+axes[0].set_xlabel('Contract Type')
+axes[0].set_ylabel('Proportion')
+axes[0].set_xticklabels(axes[0].get_xticklabels(), rotation=45, ha='right')
+axes[0].legend(['No Churn', 'Churn'])
 
-internet_churn_plot = df.groupby('InternetService')['Churn'].mean().reset_index()
-axes[1,0].bar(internet_churn_plot['InternetService'], internet_churn_plot['Churn'], color='steelblue')
-axes[1,0].set_title('Churn Rate by Internet Service')
-axes[1,0].set_ylabel('Churn Rate')
-axes[1,0].set_ylim(0, 0.6)
-for i, row in internet_churn_plot.iterrows():
-    axes[1,0].text(i, row['Churn'] + 0.01, f"{row['Churn']:.1%}", ha='center', fontweight='bold')
+internet_churn_plot = df_raw.groupby('InternetService')['Churn'].value_counts(
+    normalize=True).unstack()
+internet_churn_plot.plot(kind='bar', ax=axes[1], colormap='Set2')
+axes[1].set_title('Churn Rate by Internet Service')
+axes[1].set_xlabel('Internet Service')
+axes[1].set_ylabel('Proportion')
+axes[1].set_xticklabels(axes[1].get_xticklabels(), rotation=45, ha='right')
+axes[1].legend(['No Churn', 'Churn'])
 
-df.boxplot(column='MonthlyCharges', by='Churn', ax=axes[1,1],
-           boxprops=dict(color='steelblue'), medianprops=dict(color='tomato'))
-axes[1,1].set_xlabel('Churn (0=No, 1=Yes)')
-axes[1,1].set_ylabel('Monthly Charges ($)')
-plt.sca(axes[1,1])
-plt.title('Monthly Charges by Churn')
-
-df.boxplot(column='tenure', by='Churn', ax=axes[2,0],
-           boxprops=dict(color='steelblue'), medianprops=dict(color='tomato'))
-axes[2,0].set_xlabel('Churn (0=No, 1=Yes)')
-axes[2,0].set_ylabel('Tenure (Months)')
-plt.sca(axes[2,0])
-plt.title('Tenure by Churn')
-
-payment_churn = df.groupby('PaymentMethod')['Churn'].mean().reset_index()
-axes[2,1].barh(payment_churn['PaymentMethod'], payment_churn['Churn'], color='steelblue')
-axes[2,1].set_title('Churn Rate by Payment Method')
-axes[2,1].set_xlabel('Churn Rate')
-for i, row in payment_churn.iterrows():
-    axes[2,1].text(row['Churn'] + 0.005, i, f"{row['Churn']:.1%}", va='center', fontweight='bold')
+payment_churn_plot = df_raw.groupby('PaymentMethod')['Churn'].value_counts(
+    normalize=True).unstack()
+payment_churn_plot.plot(kind='bar', ax=axes[2], colormap='Set2')
+axes[2].set_title('Churn Rate by Payment Method')
+axes[2].set_xlabel('Payment Method')
+axes[2].set_ylabel('Proportion')
+axes[2].set_xticklabels(axes[2].get_xticklabels(), rotation=45, ha='right')
+axes[2].legend(['No Churn', 'Churn'])
 
 plt.tight_layout()
 plt.show()
@@ -163,13 +207,13 @@ A few clear patterns stand out. Contract type is the variable most strongly tied
 
 ```{python}
 #| label: correlation-heatmap
-#| fig-cap: "Correlation Heatmap - Numeric Features"
+#| fig-cap: "Correlation Heatmap - All Features (Sammy)"
 
-numeric_cols = df.select_dtypes(include=np.number).columns.tolist()
-plt.figure(figsize=(8, 6))
-sns.heatmap(df[numeric_cols].corr(), annot=True, fmt='.2f',
-            cmap='coolwarm', center=0, square=True, linewidths=0.5)
-plt.title('Correlation Heatmap - Numeric Features', fontsize=13, fontweight='bold')
+# Full correlation heatmap across all encoded features (Sammy)
+plt.figure(figsize=(16, 12))
+sns.heatmap(df.corr(), annot=True, fmt='.2f',
+            cmap='coolwarm', center=0, linewidths=0.5)
+plt.title('Correlation Heatmap', fontsize=13, fontweight='bold')
 plt.tight_layout()
 plt.show()
 ```
@@ -180,26 +224,16 @@ Among the numeric variables, `tenure` has the strongest relationship with churn 
 
 ### Data Preprocessing
 
-All categorical variables were converted to numeric codes using label encoding. Features were then standardized so that no single variable dominates the model due to its scale. The data was split into `80%` for training and `20%` for testing, with the split done in a way that preserves the same churn rate in both sets.
+Binary variables were encoded directly using `.map()`, and columns with a redundant "No service" category were collapsed into a simple Yes/No before encoding. Multi-category nominal columns (`InternetService`, `Contract`, `PaymentMethod`) were one-hot encoded using `pd.get_dummies()` to avoid implying a false ordering between categories. Features were then standardized so that no single variable dominates the model due to its scale. The data was split into `80%` for training and `20%` for testing, with the split done in a way that preserves the same churn rate in both sets.
 
 ```{python}
 #| label: preprocessing
 
-df_model = df.drop(columns=['customerID', 'TotalCharges'])
-cat_cols = df_model.select_dtypes(include='object').columns.tolist()
-le = LabelEncoder()
-for col in cat_cols:
-    df_model[col] = le.fit_transform(df_model[col])
-
-X = df_model.drop(columns=['Churn'])
-y = df_model['Churn']
+X = df.drop(columns=['Churn', 'TotalCharges'])
+y = df['Churn']
 
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42, stratify=y)
-
-scaler = StandardScaler()
-X_train_scaled = scaler.fit_transform(X_train)
-X_test_scaled  = scaler.transform(X_test)
 
 n_train = X_train.shape[0]
 n_test  = X_test.shape[0]
@@ -209,11 +243,11 @@ print(f"Test set:     {n_test} observations")
 print(f"Churn rate - Train: {y_train.mean():.3f} | Test: {y_test.mean():.3f}")
 ```
 
-The training set contains `{python} f"{n_train:,}"` observations and the test set contains `{python} f"{n_test:,}"`, with a churn rate of `{python} f"{y_train.mean():.1%}"` in both sets confirming the stratified split worked correctly.
+The training set contains `{python} f"{n_train:,}"` observations and the test set contains `{python} f"{n_test:,}"`, with a churn rate of `{python} f"{y_train.mean():.1%}"` in both sets confirming the stratified split worked correctly. After one-hot encoding, the feature space expanded from `21` raw variables to `{python} f"{n_features_model}"` features used in the model.
 
 ### Logistic Regression Models
 
-We built two models. The **baseline model** uses all available features after preprocessing. The **interaction model** adds one extra variable: the product of `Contract` and `InternetService`, which lets the model capture whether those two variables together have a stronger or weaker effect on churn than either one alone.
+We built two models. The **baseline model** uses all available features after preprocessing. The **interaction model** adds one extra variable: the product of the fiber optic indicator (`InternetService_Fiber optic`) and the month-to-month indicator (`Contract_One year`'s complement), which lets the model capture whether those two variables together have a stronger or weaker effect on churn than either one alone.
 
 Logistic regression was chosen because its output is easy to interpret. Each coefficient tells you the direction and size of a variable's effect on the odds of churning. Given the business goal, **churn recall was treated as the most important metric**, because missing a customer who is about to leave is more costly than incorrectly flagging one who would have stayed.
 
@@ -227,8 +261,14 @@ Logistic regression was chosen because its output is easy to interpret. Each coe
 
 X_train_int = X_train.copy()
 X_test_int  = X_test.copy()
-X_train_int['Contract_x_Internet'] = X_train['Contract'] * X_train['InternetService']
-X_test_int['Contract_x_Internet']  = X_test['Contract']  * X_test['InternetService']
+
+# Interaction term: Fiber optic × no long-term contract
+X_train_int['Fiber_x_MTM'] = (X_train['InternetService_Fiber optic'] *
+                               (1 - X_train.get('Contract_One year', 0) -
+                                    X_train.get('Contract_Two year', 0)))
+X_test_int['Fiber_x_MTM']  = (X_test['InternetService_Fiber optic'] *
+                               (1 - X_test.get('Contract_One year', 0) -
+                                    X_test.get('Contract_Two year', 0)))
 
 scaler_int = StandardScaler()
 X_train_int_scaled = scaler_int.fit_transform(X_train_int)
@@ -240,10 +280,10 @@ lr_int.fit(X_train_int_scaled, y_train)
 y_pred_int  = lr_int.predict(X_test_int_scaled)
 y_proba_int = lr_int.predict_proba(X_test_int_scaled)[:, 1]
 
-roc_auc_int = roc_auc_score(y_test, y_proba_int)
-report_int  = classification_report(y_test, y_pred_int,
-                                    target_names=['No Churn','Churn'],
-                                    output_dict=True)
+roc_auc_int       = roc_auc_score(y_test, y_proba_int)
+report_int        = classification_report(y_test, y_pred_int,
+                                          target_names=['No Churn','Churn'],
+                                          output_dict=True)
 accuracy_int      = report_int['accuracy']
 churn_recall_int  = report_int['Churn']['recall']
 churn_precision_int = report_int['Churn']['precision']
@@ -267,7 +307,7 @@ plt.tight_layout()
 plt.show()
 ```
 
-The interaction model achieved an ROC-AUC of `{python} f"{roc_auc_int:.4f}"`, exceeding the target of `0.80`. Overall accuracy was `{python} f"{accuracy_int:.1%}"`. Churn recall at the default threshold of `0.50` was `{python} f"{churn_recall_int:.1%}"`, which falls short of the `75%` target. The threshold tuning section below addresses this directly.
+The interaction model achieved an ROC-AUC of `{python} f"{roc_auc_int:.4f}"`, exceeding the target of `0.80`. Overall accuracy was `{python} f"{accuracy_int:.1%}"`, just under the `80%` target. Churn recall at the default threshold of `0.50` was `{python} f"{churn_recall_int:.1%}"`, which falls short of the `75%` target. The threshold tuning section below addresses this directly.
 
 ### Threshold Tuning
 
@@ -292,8 +332,6 @@ for t in thresholds:
     })
 
 threshold_df = pd.DataFrame(rows)
-
-# Store threshold=0.30 values for inline use
 t30 = threshold_df[threshold_df['Threshold'] == 0.30].iloc[0]
 t30_recall    = float(t30['Churn Recall'])
 t30_precision = float(t30['Churn Precision'])
@@ -351,9 +389,6 @@ coef_df = pd.DataFrame({
 
 top_pos_feature = coef_df[coef_df['Coefficient'] > 0].iloc[0]
 top_neg_feature = coef_df[coef_df['Coefficient'] < 0].iloc[0]
-contract_coef   = coef_df[coef_df['Feature'] == 'Contract']['Coefficient'].values[0]
-internet_coef   = coef_df[coef_df['Feature'] == 'InternetService']['Coefficient'].values[0]
-paperless_coef  = coef_df[coef_df['Feature'] == 'PaperlessBilling']['Coefficient'].values[0]
 
 plt.figure(figsize=(10, 7))
 colors = ['tomato' if c > 0 else 'steelblue' for c in coef_df['Coefficient']]
@@ -367,7 +402,7 @@ plt.tight_layout()
 plt.show()
 ```
 
-Red bars indicate variables that increase the likelihood of churn, while blue bars indicate variables that reduce it. `MonthlyCharges` (`{python} f"{top_pos_feature['Coefficient']:+.2f}"`) and `tenure` (`{python} f"{top_neg_feature['Coefficient']:+.2f}"`) are the two strongest variables, nearly equal in size but pointing in opposite directions. Higher bills push customers toward leaving, while longer customer relationships pull them away from it. `Contract` type (`{python} f"{contract_coef:+.2f}"`) is the next most important: longer contracts strongly reduce churn. `InternetService` (`{python} f"{internet_coef:+.2f}"`) and `PaperlessBilling` (`{python} f"{paperless_coef:+.2f}"`) are associated with higher churn.
+Red bars indicate variables that increase the likelihood of churn, while blue bars indicate variables that reduce it. `MonthlyCharges` (`{python} f"{top_pos_feature['Coefficient']:+.2f}"`) and `tenure` (`{python} f"{top_neg_feature['Coefficient']:+.2f}"`) remain the two strongest variables, nearly equal in size but pointing in opposite directions. Higher bills push customers toward leaving, while longer customer relationships pull them away from it.
 
 ## Conclusions
 
