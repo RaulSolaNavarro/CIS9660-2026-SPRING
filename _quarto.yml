@@ -11,6 +11,8 @@ website:
         href: index.qmd
       - text: "Final Report"
         href: churn-report.qmd
+      - text: "Final Presentation"
+        href: final-presentation.qmd
 
 format:
   html:

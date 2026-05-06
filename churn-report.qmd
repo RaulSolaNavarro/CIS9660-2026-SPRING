@@ -425,3 +425,10 @@ The model's output can feed directly into retention programs:
 **Fiber optic service:** The `{python} f"{fiber_churn:.1%}"` churn rate among fiber optic users is worth investigating separately. It may reflect service reliability issues, pricing relative to competition, or unmet expectations. A focused customer satisfaction review in this segment would help identify the root cause.
 
 **Early customer engagement:** Since short tenure is one of the strongest signals of churn risk, putting more resources into the customer experience during the first year of service could improve long-term retention rates and increase the overall value of the customer base.
+
+::: {.callout-note collapse="true"}
+## 🤖 AI Assistance Disclosure
+
+Portions of this project were completed with the assistance of Claude (Anthropic). AI assistance was used in the following areas: structuring and writing the Quarto `.qmd` document, setting up the GitHub Actions workflow for GitHub Pages deployment, and debugging Python code errors during development. All of the base code (EDA + Models), analytical decisions, interpretations, and conclusions are the authors' own. 
+
+:::

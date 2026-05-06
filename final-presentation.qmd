@@ -1,0 +1,364 @@
+---
+title: "Customer Churn Prediction Analysis"
+subtitle: "CIS 9660 - Group 2 Final Presentation"
+date: "May 11, 2026"
+format:
+  revealjs:
+    theme: [default, custom.scss]
+    slide-number: true
+    progress: true
+    logo: ""
+    footer: "CIS 9660 · Group 2 Project · Spring 2026"
+    transition: slide
+    background-transition: fade
+    highlight-style: github
+    code-block-bg: true
+    incremental: false
+    width: 1280
+    height: 720
+    margin: 0.08
+    title-slide-attributes:
+      data-background-color: "#1F3864"
+execute:
+  echo: false
+---
+
+## Team Members {background-color="#1F3864"}
+
+::: {.columns}
+::: {.column width="50%"}
+### Our Team
+- **Harrison Cabe**
+- **Raúl J. Solá Navarro**
+- **Samuel Spitzer**
+- **Victor Murra Schott**
+:::
+::: {.column width="50%"}
+### Course
+CIS 9660 - Data Mining for Business Analytics
+
+**Baruch College > Spring 2026**
+:::
+:::
+
+---
+
+## The Business Problem {background-color="#f7f9fc"}
+
+::: {.callout-note appearance="minimal"}
+## Research Question
+**Can we predict whether a telecom customer will churn based on their contract type, monthly charges, and service usage?**
+:::
+
+<br>
+
+::: {.columns}
+::: {.column width="50%"}
+### Why It Matters
+- Acquiring a new customer costs significantly more than retaining one
+- Early identification of at-risk customers enables targeted intervention
+- Even small reductions in churn have significant revenue impact
+:::
+::: {.column width="50%"}
+### Our Goals
+**Predictive:** Build a model that correctly classifies customers as likely to churn or stay
+
+**Inferential:** Test whether the combination of `InternetService` and `Contract` type significantly affects churn
+:::
+:::
+
+---
+
+## Dataset {background-color="#f7f9fc"}
+
+::: {.columns}
+::: {.column width="55%"}
+### Kaggle: Telco Customer Churn
+🔗 [`kaggle.com/datasets/blastchar/telco-customer-churn`](https://www.kaggle.com/datasets/blastchar/telco-customer-churn)
+
+| Property | Value |
+|----------|-------|
+| Observations | **7,032** (after cleaning) |
+| Features | **23** (after encoding) |
+| Target | `Churn` (Yes / No) |
+| Churn Rate | **26.6%** |
+:::
+::: {.column width="45%"}
+### Preprocessing Steps
+- Dropped **11 rows** with missing `TotalCharges`
+- Collapsed redundant "No service" categories
+- Binary encoded with `.map()`
+- One-hot encoded `InternetService`, `Contract`, `PaymentMethod`
+- Scaled `MonthlyCharges`, `TotalCharges`, `tenure`
+:::
+:::
+
+---
+
+## Exploratory Data Analysis {background-color="#f7f9fc"}
+
+### Key Patterns in the Data
+
+::: {.columns}
+::: {.column width="50%"}
+**Contract Type**
+
+| Contract | Churn Rate |
+|----------|-----------|
+| Month-to-month | **42.7%** |
+| One year | 11.3% |
+| Two year | 2.8% |
+
+**Internet Service**
+
+| Service | Churn Rate |
+|---------|-----------|
+| Fiber optic | **41.9%** |
+| DSL | 19.0% |
+| No internet | 7.4% |
+:::
+::: {.column width="50%"}
+**Continuous Variables**
+
+| Variable | No Churn | Churn |
+|----------|----------|-------|
+| Monthly Charges (median) | $64 | $80 |
+| Tenure (median) | 38 mo | 10 mo |
+
+**Payment Method**
+
+| Method | Churn Rate |
+|--------|-----------|
+| Electronic check | **45.3%** |
+| Bank transfer | 16.7% |
+| Credit card | 15.3% |
+| Mailed check | 19.2% |
+:::
+:::
+
+---
+
+## Correlation Findings {background-color="#f7f9fc"}
+
+### Numeric Variables vs. Churn
+
+<br>
+
+::: {.columns}
+::: {.column width="33%"}
+### 📉 tenure
+Correlation: **-0.35**
+
+Strongest numeric predictor → longer-tenured customers are significantly less likely to leave
+:::
+::: {.column width="33%"}
+### 📈 MonthlyCharges
+Correlation: **+0.19**
+
+Higher bills are associated with increased churn risk
+:::
+::: {.column width="33%"}
+### ⚠️ TotalCharges
+Correlation with tenure: **0.83**
+
+Excluded from modeling to avoid multicollinearity
+:::
+:::
+
+---
+
+## Methodology {background-color="#1F3864"}
+
+<br>
+
+::: {.columns}
+::: {.column width="50%"}
+### Model 1: Baseline
+Logistic regression using all features after preprocessing
+
+- 80/20 train/test split with stratification
+- `max_iter=1000` for convergence
+- Evaluated at default threshold of 0.50
+:::
+::: {.column width="50%"}
+### Model 2: Interaction
+Extends baseline with **4 interaction terms**
+
+- `Contract1 × FiberOptic`
+- `Contract2 × FiberOptic`
+- `Contract1 × NoInternet`
+- `Contract2 × NoInternet`
+
+Month-to-month × DSL serve as the **reference baseline**
+:::
+:::
+
+---
+
+## Model Results {background-color="#f7f9fc"}
+
+### Performance at Default Threshold (0.50)
+
+<br>
+
+| Metric | Baseline | Interaction | Target |
+|--------|----------|-------------|--------|
+| ROC-AUC | 0.8289 | 0.8289 | ≥ 0.80 ✅ |
+| Accuracy | 79.8% | 79.8% | ≥ 80% ⚠️ |
+| Churn Recall | 56.4% | 55.6% | ≥ 75% ❌ |
+| Churn Precision | 63.6% | 63.6% | — |
+
+<br>
+
+> Recall falls short at the default threshold → addressed through threshold tuning
+
+---
+
+## Threshold Tuning {background-color="#f7f9fc"}
+
+### Lowering the Classification Threshold to 0.30
+
+::: {.columns}
+::: {.column width="55%"}
+| Threshold | Accuracy | Churn Recall | Precision |
+|-----------|----------|-------------|-----------|
+| 0.50 | 79.8% | 56.4% | 63.6% |
+| 0.40 | 78.2% | 67.4% | 57.7% |
+| **0.30** | **74.5%** | **79.0%** | **51.1%** |
+:::
+::: {.column width="45%"}
+### Why 0.30?
+At threshold = 0.30 the model catches **~79% of actual churners** ✅
+
+**The trade-off is acceptable:**
+Missing a churner = losing a customer
+
+Flagging a loyal customer = small cost of a discount offer
+:::
+:::
+
+---
+
+## Interaction Term Findings {background-color="#f7f9fc"}
+
+### What the Four Interaction Terms Revealed
+
+::: {.columns}
+::: {.column width="50%"}
+### 📈 Increases Churn Risk
+- **Two-year × Fiber optic**: highest churn risk of all combinations; customers locked into long-term contracts who feel underserved by their internet service
+- **One-year × Fiber optic**: elevated but lower risk than two-year
+
+:::
+::: {.column width="50%"}
+### 📉 Reduces Churn Risk
+- **Two-year × No internet**: lowest churn of all; simple phone-only plans attract a very stable customer base
+- **One-year × No internet**: similarly protective
+
+### Key Insight
+It's not just fiber optic that drives churn, it's fiber optic customers **who are locked in** that are most at risk
+:::
+:::
+
+---
+
+## Feature Importance {background-color="#f7f9fc"}
+
+### Top Drivers of Churn (Interaction Model Coefficients)
+
+<br>
+
+::: {.columns}
+::: {.column width="50%"}
+### 📈 Increases Churn
+| Feature | Coefficient |
+|---------|------------|
+| MonthlyCharges | +0.89 |
+| InternetService_fiber_optic | +1.07 |
+| TotalCharges | +0.67 |
+| PaymentMethod_electronic_check | +0.41 |
+:::
+::: {.column width="50%"}
+### 📉 Reduces Churn
+| Feature | Coefficient |
+|---------|------------|
+| tenure | -1.40 |
+| Contract_two_year | -1.54 |
+| Contract_one_year | -0.69 |
+| InternetService_no | -0.87 |
+:::
+:::
+
+---
+
+## Practical Implications {background-color="#1F3864"}
+
+<br>
+
+::: {.columns}
+::: {.column width="50%"}
+### 🎯 Contract Upgrade Offers
+Target month-to-month customers with predicted churn probability ≥ 0.30 with discounted annual contract offers
+
+### 💰 Pricing Interventions
+Loyalty discounts for high-charge customers in the top risk quartile
+:::
+::: {.column width="50%"}
+### 🔧 Fiber Optic Service Review
+The 41.9% churn rate, especially among long-term fiber optic customers, signals a service quality or pricing issue worth investigating
+
+### 📅 Early Engagement
+Churn risk is highest in the first 10 months ✅
+
+Invest in onboarding and early retention programs!
+:::
+:::
+
+---
+
+## Conclusions {background-color="#f7f9fc"}
+
+::: {.columns}
+::: {.column width="55%"}
+### What We Found
+- ROC-AUC of **0.83**: the model discriminates well between churners and non-churners
+- At threshold 0.30, churn recall reaches **~79%**, meeting the project target
+- **tenure** and **MonthlyCharges** are the two dominant predictors
+- Contract type is the strongest categorical signal: the two-year customers churn at just **2.8%** vs **42.7%** for month-to-month
+:::
+::: {.column width="45%"}
+### What's New from Interactions
+The four-term interaction model revealed that it's not simply fiber optic that drives churn, but rather the **long-term contract holders on fiber optic** who are most at risk, suggesting dissatisfaction with a service they feel locked into
+
+### Full Report
+🔗 [View on GitHub Pages](https://RaulSolaNavarro.github.io/CIS9660-2026-SPRING/churn-report.html)
+:::
+:::
+
+---
+
+## Thank You {background-color="#1F3864"}
+
+<br>
+
+::: {.columns}
+::: {.column width="60%"}
+**Dataset:** Telco Customer Churn (Kaggle)
+`7,032 obs × 23 features`
+
+**Method:** Logistic Regression + 4 Interaction Terms
+`Contract × InternetService`
+
+**Key Finding:** Long-term fiber optic customers are the highest-risk churn segment
+
+**Full Report:** [RaulSolaNavarro.github.io/CIS9660-2026-SPRING/churn-report.html](https://RaulSolaNavarro.github.io/CIS9660-2026-SPRING/churn-report.html)
+:::
+::: {.column width="40%"}
+### Questions?
+
+- **Harrison Cabe**
+- **Raúl J. Solá Navarro**
+- **Samuel Spitzer**
+- **Victor Murra Schott**
+:::
+:::
