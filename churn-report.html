@@ -331,33 +331,33 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 Table&nbsp;1: Dataset Overview
 </figcaption>
 <div aria-describedby="tbl-summary-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
-<div class="cell-output cell-output-display" data-execution_count="11">
+<div class="cell-output cell-output-display" data-execution_count="2">
 <style type="text/css">
 </style>
 
-<table id="T_0a68b" class="do-not-create-environment cell caption-top table table-sm table-striped small">
+<table id="T_7db7f" class="do-not-create-environment cell caption-top table table-sm table-striped small">
 <thead>
 <tr class="header">
-<th id="T_0a68b_level0_col0" class="col_heading level0 col0" data-quarto-table-cell-role="th">Variable</th>
-<th id="T_0a68b_level0_col1" class="col_heading level0 col1" data-quarto-table-cell-role="th">Value</th>
+<th id="T_7db7f_level0_col0" class="col_heading level0 col0" data-quarto-table-cell-role="th">Variable</th>
+<th id="T_7db7f_level0_col1" class="col_heading level0 col1" data-quarto-table-cell-role="th">Value</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td id="T_0a68b_row0_col0" class="data row0 col0">Observations</td>
-<td id="T_0a68b_row0_col1" class="data row0 col1">7,032</td>
+<td id="T_7db7f_row0_col0" class="data row0 col0">Observations</td>
+<td id="T_7db7f_row0_col1" class="data row0 col1">7,032</td>
 </tr>
 <tr class="even">
-<td id="T_0a68b_row1_col0" class="data row1 col0">Features</td>
-<td id="T_0a68b_row1_col1" class="data row1 col1">23</td>
+<td id="T_7db7f_row1_col0" class="data row1 col0">Features</td>
+<td id="T_7db7f_row1_col1" class="data row1 col1">23</td>
 </tr>
 <tr class="odd">
-<td id="T_0a68b_row2_col0" class="data row2 col0">Target</td>
-<td id="T_0a68b_row2_col1" class="data row2 col1">Churn (Yes/No)</td>
+<td id="T_7db7f_row2_col0" class="data row2 col0">Target</td>
+<td id="T_7db7f_row2_col1" class="data row2 col1">Churn (Yes/No)</td>
 </tr>
 <tr class="even">
-<td id="T_0a68b_row3_col0" class="data row3 col0">Churn Rate</td>
-<td id="T_0a68b_row3_col1" class="data row3 col1">26.6%</td>
+<td id="T_7db7f_row3_col0" class="data row3 col0">Churn Rate</td>
+<td id="T_7db7f_row3_col1" class="data row3 col1">26.6%</td>
 </tr>
 </tbody>
 </table>
@@ -487,8 +487,8 @@ Churn rate - Train: 0.266 | Test: 0.266</code></pre>
 </section>
 <section id="logistic-regression-models" class="level3" data-number="4.2">
 <h3 data-number="4.2" class="anchored" data-anchor-id="logistic-regression-models"><span class="header-section-number">4.2</span> Logistic Regression Models</h3>
-<p>We built two models. The <strong>baseline model</strong> uses all available features after preprocessing. The <strong>interaction model</strong> adds one extra variable: the product of the fiber optic indicator (<code>InternetService_Fiber optic</code>) and the month-to-month indicator (<code>Contract_One year</code>’s complement), which lets the model capture whether those two variables together have a stronger or weaker effect on churn than either one alone.</p>
-<p>Logistic regression was chosen because its output is easy to interpret. Each coefficient tells you the direction and size of a variable’s effect on the odds of churning. Given the business goal, <strong>churn recall was treated as the most important metric</strong>, because missing a customer who is about to leave is more costly than incorrectly flagging one who would have stayed.</p>
+<p>We built two models. The <strong>baseline model</strong> uses all available features after pre-processing. The <strong>interaction model</strong> extends the baseline by adding four interaction terms that capture the combined effect of contract type and internet service on churn: one-year contract × fiber optic, two-year contract × fiber optic, one-year contract × no internet, and two-year contract × no internet. Since month-to-month and DSL are the reference categories, their effects are captured in the model intercept and serve as the baseline against which all other combinations are compared.</p>
+<p>Logistic regression was chosen because its output is easy to interpret. Each coefficient tells you the direction and size of a variable’s effect on the odds of churning. Given the business goal, <strong>churn recall was treated as the most important metric</strong>, because missing a customer who is about to leave is more costly than incorrectly flagging one who would have stayed. Logistic regression was chosen because its output is easy to interpret. Each coefficient tells you the direction and size of a variable’s effect on the odds of churning. Given the business goal, <strong>churn recall was treated as the most important metric</strong>, because missing a customer who is about to leave is more costly than incorrectly flagging one who would have stayed.</p>
 </section>
 </section>
 <section id="results" class="level2" data-number="5">
@@ -501,73 +501,76 @@ Churn rate - Train: 0.266 | Test: 0.266</code></pre>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>X_train_int <span class="op">=</span> X_train.copy()</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>X_test_int  <span class="op">=</span> X_test.copy()</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Interaction term: Fiber optic × no long-term contract</span></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>X_train_int[<span class="st">'Fiber_x_MTM'</span>] <span class="op">=</span> (X_train[<span class="st">'InternetService_Fiber optic'</span>] <span class="op">*</span></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>                               (<span class="dv">1</span> <span class="op">-</span> X_train.get(<span class="st">'Contract_One year'</span>, <span class="dv">0</span>) <span class="op">-</span></span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>                                    X_train.get(<span class="st">'Contract_Two year'</span>, <span class="dv">0</span>)))</span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>X_test_int[<span class="st">'Fiber_x_MTM'</span>]  <span class="op">=</span> (X_test[<span class="st">'InternetService_Fiber optic'</span>] <span class="op">*</span></span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>                               (<span class="dv">1</span> <span class="op">-</span> X_test.get(<span class="st">'Contract_One year'</span>, <span class="dv">0</span>) <span class="op">-</span></span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>                                    X_test.get(<span class="st">'Contract_Two year'</span>, <span class="dv">0</span>)))</span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>scaler_int <span class="op">=</span> StandardScaler()</span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>X_train_int_scaled <span class="op">=</span> scaler_int.fit_transform(X_train_int)</span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>X_test_int_scaled  <span class="op">=</span> scaler_int.transform(X_test_int)</span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>lr_int <span class="op">=</span> LogisticRegression(random_state<span class="op">=</span><span class="dv">42</span>, max_iter<span class="op">=</span><span class="dv">1000</span>)</span>
-<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>lr_int.fit(X_train_int_scaled, y_train)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Four interaction terms (Harrison)</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>X_train_int[<span class="st">'Contract1_x_FiberOptic'</span>] <span class="op">=</span> X_train[<span class="st">'Contract_One year'</span>] <span class="op">*</span> X_train[<span class="st">'InternetService_Fiber optic'</span>]</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>X_train_int[<span class="st">'Contract2_x_FiberOptic'</span>] <span class="op">=</span> X_train[<span class="st">'Contract_Two year'</span>] <span class="op">*</span> X_train[<span class="st">'InternetService_Fiber optic'</span>]</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>X_train_int[<span class="st">'Contract1_x_NoInternet'</span>] <span class="op">=</span> X_train[<span class="st">'Contract_One year'</span>] <span class="op">*</span> X_train[<span class="st">'InternetService_No'</span>]</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>X_train_int[<span class="st">'Contract2_x_NoInternet'</span>] <span class="op">=</span> X_train[<span class="st">'Contract_Two year'</span>] <span class="op">*</span> X_train[<span class="st">'InternetService_No'</span>]</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>X_test_int[<span class="st">'Contract1_x_FiberOptic'</span>] <span class="op">=</span> X_test[<span class="st">'Contract_One year'</span>] <span class="op">*</span> X_test[<span class="st">'InternetService_Fiber optic'</span>]</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>X_test_int[<span class="st">'Contract2_x_FiberOptic'</span>] <span class="op">=</span> X_test[<span class="st">'Contract_Two year'</span>] <span class="op">*</span> X_test[<span class="st">'InternetService_Fiber optic'</span>]</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>X_test_int[<span class="st">'Contract1_x_NoInternet'</span>] <span class="op">=</span> X_test[<span class="st">'Contract_One year'</span>] <span class="op">*</span> X_test[<span class="st">'InternetService_No'</span>]</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>X_test_int[<span class="st">'Contract2_x_NoInternet'</span>] <span class="op">=</span> X_test[<span class="st">'Contract_Two year'</span>] <span class="op">*</span> X_test[<span class="st">'InternetService_No'</span>]</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>scaler_int <span class="op">=</span> StandardScaler()</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>X_train_int_scaled <span class="op">=</span> scaler_int.fit_transform(X_train_int)</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>X_test_int_scaled  <span class="op">=</span> scaler_int.transform(X_test_int)</span>
 <span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>y_pred_int  <span class="op">=</span> lr_int.predict(X_test_int_scaled)</span>
-<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>y_proba_int <span class="op">=</span> lr_int.predict_proba(X_test_int_scaled)[:, <span class="dv">1</span>]</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>lr_int <span class="op">=</span> LogisticRegression(random_state<span class="op">=</span><span class="dv">42</span>, max_iter<span class="op">=</span><span class="dv">1000</span>)</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>lr_int.fit(X_train_int_scaled, y_train)</span>
 <span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>roc_auc_int       <span class="op">=</span> roc_auc_score(y_test, y_proba_int)</span>
-<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>report_int        <span class="op">=</span> classification_report(y_test, y_pred_int,</span>
-<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>                                          target_names<span class="op">=</span>[<span class="st">'No Churn'</span>,<span class="st">'Churn'</span>],</span>
-<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>                                          output_dict<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>accuracy_int      <span class="op">=</span> report_int[<span class="st">'accuracy'</span>]</span>
-<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>churn_recall_int  <span class="op">=</span> report_int[<span class="st">'Churn'</span>][<span class="st">'recall'</span>]</span>
-<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>churn_precision_int <span class="op">=</span> report_int[<span class="st">'Churn'</span>][<span class="st">'precision'</span>]</span>
-<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>churn_f1_int      <span class="op">=</span> report_int[<span class="st">'Churn'</span>][<span class="st">'f1-score'</span>]</span>
-<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== Interaction Model Performance ==="</span>)</span>
-<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"ROC-AUC: </span><span class="sc">{</span>roc_auc_int<span class="sc">:.4f}</span><span class="ss">"</span>)</span>
-<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(classification_report(y_test, y_pred_int, target_names<span class="op">=</span>[<span class="st">'No Churn'</span>,<span class="st">'Churn'</span>]))</span>
-<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">4</span>))</span>
-<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a>cm <span class="op">=</span> confusion_matrix(y_test, y_pred_int)</span>
-<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a>sns.heatmap(cm, annot<span class="op">=</span><span class="va">True</span>, fmt<span class="op">=</span><span class="st">'d'</span>, cmap<span class="op">=</span><span class="st">'Blues'</span>, ax<span class="op">=</span>axes[<span class="dv">0</span>],</span>
-<span id="cb6-38"><a href="#cb6-38" aria-hidden="true" tabindex="-1"></a>            xticklabels<span class="op">=</span>[<span class="st">'No Churn'</span>,<span class="st">'Churn'</span>], yticklabels<span class="op">=</span>[<span class="st">'No Churn'</span>,<span class="st">'Churn'</span>])</span>
-<span id="cb6-39"><a href="#cb6-39" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_title(<span class="st">'Confusion Matrix - Interaction Model'</span>)</span>
-<span id="cb6-40"><a href="#cb6-40" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_ylabel(<span class="st">'Actual'</span>)</span>
-<span id="cb6-41"><a href="#cb6-41" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_xlabel(<span class="st">'Predicted'</span>)</span>
-<span id="cb6-42"><a href="#cb6-42" aria-hidden="true" tabindex="-1"></a>RocCurveDisplay.from_predictions(y_test, y_proba_int, ax<span class="op">=</span>axes[<span class="dv">1</span>], color<span class="op">=</span><span class="st">'tomato'</span>)</span>
-<span id="cb6-43"><a href="#cb6-43" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].plot([<span class="dv">0</span>,<span class="dv">1</span>],[<span class="dv">0</span>,<span class="dv">1</span>],<span class="st">'k--'</span>)</span>
-<span id="cb6-44"><a href="#cb6-44" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_title(<span class="st">'ROC Curve - Interaction Model'</span>)</span>
-<span id="cb6-45"><a href="#cb6-45" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
-<span id="cb6-46"><a href="#cb6-46" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>y_pred_int  <span class="op">=</span> lr_int.predict(X_test_int_scaled)</span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>y_proba_int <span class="op">=</span> lr_int.predict_proba(X_test_int_scaled)[:, <span class="dv">1</span>]</span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>roc_auc_int         <span class="op">=</span> roc_auc_score(y_test, y_proba_int)</span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>report_int          <span class="op">=</span> classification_report(y_test, y_pred_int,</span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>                                            target_names<span class="op">=</span>[<span class="st">'No Churn'</span>,<span class="st">'Churn'</span>],</span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>                                            output_dict<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>accuracy_int        <span class="op">=</span> report_int[<span class="st">'accuracy'</span>]</span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>churn_recall_int    <span class="op">=</span> report_int[<span class="st">'Churn'</span>][<span class="st">'recall'</span>]</span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>churn_precision_int <span class="op">=</span> report_int[<span class="st">'Churn'</span>][<span class="st">'precision'</span>]</span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a>churn_f1_int        <span class="op">=</span> report_int[<span class="st">'Churn'</span>][<span class="st">'f1-score'</span>]</span>
+<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== Interaction Model Performance ==="</span>)</span>
+<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"ROC-AUC: </span><span class="sc">{</span>roc_auc_int<span class="sc">:.4f}</span><span class="ss">"</span>)</span>
+<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(classification_report(y_test, y_pred_int, target_names<span class="op">=</span>[<span class="st">'No Churn'</span>,<span class="st">'Churn'</span>]))</span>
+<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-38"><a href="#cb6-38" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">4</span>))</span>
+<span id="cb6-39"><a href="#cb6-39" aria-hidden="true" tabindex="-1"></a>cm <span class="op">=</span> confusion_matrix(y_test, y_pred_int)</span>
+<span id="cb6-40"><a href="#cb6-40" aria-hidden="true" tabindex="-1"></a>sns.heatmap(cm, annot<span class="op">=</span><span class="va">True</span>, fmt<span class="op">=</span><span class="st">'d'</span>, cmap<span class="op">=</span><span class="st">'Blues'</span>, ax<span class="op">=</span>axes[<span class="dv">0</span>],</span>
+<span id="cb6-41"><a href="#cb6-41" aria-hidden="true" tabindex="-1"></a>            xticklabels<span class="op">=</span>[<span class="st">'No Churn'</span>,<span class="st">'Churn'</span>], yticklabels<span class="op">=</span>[<span class="st">'No Churn'</span>,<span class="st">'Churn'</span>])</span>
+<span id="cb6-42"><a href="#cb6-42" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_title(<span class="st">'Confusion Matrix - Interaction Model'</span>)</span>
+<span id="cb6-43"><a href="#cb6-43" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_ylabel(<span class="st">'Actual'</span>)</span>
+<span id="cb6-44"><a href="#cb6-44" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_xlabel(<span class="st">'Predicted'</span>)</span>
+<span id="cb6-45"><a href="#cb6-45" aria-hidden="true" tabindex="-1"></a>RocCurveDisplay.from_predictions(y_test, y_proba_int, ax<span class="op">=</span>axes[<span class="dv">1</span>], color<span class="op">=</span><span class="st">'tomato'</span>)</span>
+<span id="cb6-46"><a href="#cb6-46" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].plot([<span class="dv">0</span>,<span class="dv">1</span>],[<span class="dv">0</span>,<span class="dv">1</span>],<span class="st">'k--'</span>)</span>
+<span id="cb6-47"><a href="#cb6-47" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_title(<span class="st">'ROC Curve - Interaction Model'</span>)</span>
+<span id="cb6-48"><a href="#cb6-48" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb6-49"><a href="#cb6-49" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>=== Interaction Model Performance ===
-ROC-AUC: 0.8340
+ROC-AUC: 0.8341
               precision    recall  f1-score   support
 
-    No Churn       0.85      0.88      0.87      1033
+    No Churn       0.85      0.89      0.87      1033
        Churn       0.64      0.56      0.60       374
 
     accuracy                           0.80      1407
-   macro avg       0.74      0.72      0.73      1407
-weighted avg       0.79      0.80      0.79      1407
+   macro avg       0.75      0.73      0.73      1407
+weighted avg       0.79      0.80      0.80      1407
 </code></pre>
 </div>
 <div class="cell-output cell-output-display">
 <div id="model-results" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="churn-report_files/figure-html/model-results-output-2.png" width="1026" height="374" class="figure-img"></p>
-<figcaption>Confusion Matrix and ROC Curve - Interaction Model</figcaption>
+<figcaption>Confusion Matrix and ROC Curve — Interaction Model</figcaption>
 </figure>
 </div>
 </div>
 </div>
-<p>The interaction model achieved an ROC-AUC of 0.8340, exceeding the target of <code>0.80</code>. Overall accuracy was 79.8%, just under the <code>80%</code> target. Churn recall at the default threshold of <code>0.50</code> was 56.4%, which falls short of the <code>75%</code> target. The threshold tuning section below addresses this directly.</p>
+<p>The interaction model achieved an ROC-AUC of 0.8341, exceeding the target of <code>0.80</code>. Overall accuracy was 80.1%, just under the <code>80%</code> target. Churn recall at the default threshold of <code>0.50</code> was 56.4%, which falls short of the <code>75%</code> target. The threshold tuning section below addresses this directly.</p>
 </section>
 <section id="threshold-tuning" class="level3" data-number="5.2">
 <h3 data-number="5.2" class="anchored" data-anchor-id="threshold-tuning"><span class="header-section-number">5.2</span> Threshold Tuning</h3>
@@ -597,61 +600,61 @@ weighted avg       0.79      0.80      0.79      1407
 <span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>threshold_df.style.hide(axis<span class="op">=</span><span class="st">'index'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
-<div id="threshold-tuning" class="cell-output cell-output-display" data-execution_count="16">
+<div id="threshold-tuning" class="cell-output cell-output-display" data-execution_count="7">
 <style type="text/css">
 </style>
 
-<table id="T_c0c97" class="caption-top table table-sm table-striped small">
+<table id="T_a29ae" class="caption-top table table-sm table-striped small">
 <thead>
 <tr class="header">
-<th id="T_c0c97_level0_col0" class="col_heading level0 col0" data-quarto-table-cell-role="th">Threshold</th>
-<th id="T_c0c97_level0_col1" class="col_heading level0 col1" data-quarto-table-cell-role="th">Accuracy</th>
-<th id="T_c0c97_level0_col2" class="col_heading level0 col2" data-quarto-table-cell-role="th">Churn Recall</th>
-<th id="T_c0c97_level0_col3" class="col_heading level0 col3" data-quarto-table-cell-role="th">Churn Precision</th>
-<th id="T_c0c97_level0_col4" class="col_heading level0 col4" data-quarto-table-cell-role="th">F1 Score</th>
+<th id="T_a29ae_level0_col0" class="col_heading level0 col0" data-quarto-table-cell-role="th">Threshold</th>
+<th id="T_a29ae_level0_col1" class="col_heading level0 col1" data-quarto-table-cell-role="th">Accuracy</th>
+<th id="T_a29ae_level0_col2" class="col_heading level0 col2" data-quarto-table-cell-role="th">Churn Recall</th>
+<th id="T_a29ae_level0_col3" class="col_heading level0 col3" data-quarto-table-cell-role="th">Churn Precision</th>
+<th id="T_a29ae_level0_col4" class="col_heading level0 col4" data-quarto-table-cell-role="th">F1 Score</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td id="T_c0c97_row0_col0" class="data row0 col0">0.300000</td>
-<td id="T_c0c97_row0_col1" class="data row0 col1">0.743</td>
-<td id="T_c0c97_row0_col2" class="data row0 col2">0.757</td>
-<td id="T_c0c97_row0_col3" class="data row0 col3">0.511</td>
-<td id="T_c0c97_row0_col4" class="data row0 col4">0.610</td>
+<td id="T_a29ae_row0_col0" class="data row0 col0">0.300000</td>
+<td id="T_a29ae_row0_col1" class="data row0 col1">0.745</td>
+<td id="T_a29ae_row0_col2" class="data row0 col2">0.751</td>
+<td id="T_a29ae_row0_col3" class="data row0 col3">0.514</td>
+<td id="T_a29ae_row0_col4" class="data row0 col4">0.610</td>
 </tr>
 <tr class="even">
-<td id="T_c0c97_row1_col0" class="data row1 col0">0.350000</td>
-<td id="T_c0c97_row1_col1" class="data row1 col1">0.768</td>
-<td id="T_c0c97_row1_col2" class="data row1 col2">0.717</td>
-<td id="T_c0c97_row1_col3" class="data row1 col3">0.548</td>
-<td id="T_c0c97_row1_col4" class="data row1 col4">0.621</td>
+<td id="T_a29ae_row1_col0" class="data row1 col0">0.350000</td>
+<td id="T_a29ae_row1_col1" class="data row1 col1">0.766</td>
+<td id="T_a29ae_row1_col2" class="data row1 col2">0.706</td>
+<td id="T_a29ae_row1_col3" class="data row1 col3">0.547</td>
+<td id="T_a29ae_row1_col4" class="data row1 col4">0.616</td>
 </tr>
 <tr class="odd">
-<td id="T_c0c97_row2_col0" class="data row2 col0">0.400000</td>
-<td id="T_c0c97_row2_col1" class="data row2 col1">0.782</td>
-<td id="T_c0c97_row2_col2" class="data row2 col2">0.674</td>
-<td id="T_c0c97_row2_col3" class="data row2 col3">0.577</td>
-<td id="T_c0c97_row2_col4" class="data row2 col4">0.621</td>
+<td id="T_a29ae_row2_col0" class="data row2 col0">0.400000</td>
+<td id="T_a29ae_row2_col1" class="data row2 col1">0.783</td>
+<td id="T_a29ae_row2_col2" class="data row2 col2">0.671</td>
+<td id="T_a29ae_row2_col3" class="data row2 col3">0.578</td>
+<td id="T_a29ae_row2_col4" class="data row2 col4">0.621</td>
 </tr>
 <tr class="even">
-<td id="T_c0c97_row3_col0" class="data row3 col0">0.450000</td>
-<td id="T_c0c97_row3_col1" class="data row3 col1">0.790</td>
-<td id="T_c0c97_row3_col2" class="data row3 col2">0.628</td>
-<td id="T_c0c97_row3_col3" class="data row3 col3">0.599</td>
-<td id="T_c0c97_row3_col4" class="data row3 col4">0.614</td>
+<td id="T_a29ae_row3_col0" class="data row3 col0">0.450000</td>
+<td id="T_a29ae_row3_col1" class="data row3 col1">0.792</td>
+<td id="T_a29ae_row3_col2" class="data row3 col2">0.626</td>
+<td id="T_a29ae_row3_col3" class="data row3 col3">0.605</td>
+<td id="T_a29ae_row3_col4" class="data row3 col4">0.615</td>
 </tr>
 <tr class="odd">
-<td id="T_c0c97_row4_col0" class="data row4 col0">0.500000</td>
-<td id="T_c0c97_row4_col1" class="data row4 col1">0.798</td>
-<td id="T_c0c97_row4_col2" class="data row4 col2">0.564</td>
-<td id="T_c0c97_row4_col3" class="data row4 col3">0.636</td>
-<td id="T_c0c97_row4_col4" class="data row4 col4">0.598</td>
+<td id="T_a29ae_row4_col0" class="data row4 col0">0.500000</td>
+<td id="T_a29ae_row4_col1" class="data row4 col1">0.801</td>
+<td id="T_a29ae_row4_col2" class="data row4 col2">0.564</td>
+<td id="T_a29ae_row4_col3" class="data row4 col3">0.643</td>
+<td id="T_a29ae_row4_col4" class="data row4 col4">0.601</td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
-<p>At a threshold of <code>0.30</code>, the model catches 75.7% of actual churners, meeting the recall target from the proposal. The trade-off is that precision drops to 51.1%, meaning about half of the customers the model flags would not have actually churned. In a retention context this is an acceptable trade-off: reaching out to a loyal customer with a discount offer costs little, while doing nothing about a customer who is about to leave is far more expensive.</p>
+<p>At a threshold of <code>0.30</code>, the model catches 75.1% of actual churners, meeting the recall target from the proposal. The trade-off is that precision drops to 51.4%, meaning about half of the customers the model flags would not have actually churned. In a retention context this is an acceptable trade-off: reaching out to a loyal customer with a discount offer costs little, while doing nothing about a customer who is about to leave is far more expensive.</p>
 </section>
 <section id="cross-validation" class="level3" data-number="5.3">
 <h3 data-number="5.3" class="anchored" data-anchor-id="cross-validation"><span class="header-section-number">5.3</span> Cross-Validation</h3>
@@ -683,44 +686,44 @@ weighted avg       0.79      0.80      0.79      1407
 <span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>cv_df[<span class="st">'Std Dev'</span>] <span class="op">=</span> cv_df[<span class="st">'Std Dev'</span>].<span class="bu">map</span>(<span class="st">'</span><span class="sc">{:.4f}</span><span class="st">'</span>.<span class="bu">format</span>)</span>
 <span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>cv_df.style.hide(axis<span class="op">=</span><span class="st">'index'</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
-<div id="cross-validation" class="cell-output cell-output-display" data-execution_count="17">
+<div id="cross-validation" class="cell-output cell-output-display" data-execution_count="8">
 <style type="text/css">
 </style>
 
-<table id="T_fc7f0" class="caption-top table table-sm table-striped small">
+<table id="T_942ad" class="caption-top table table-sm table-striped small">
 <thead>
 <tr class="header">
-<th id="T_fc7f0_level0_col0" class="col_heading level0 col0" data-quarto-table-cell-role="th">Metric</th>
-<th id="T_fc7f0_level0_col1" class="col_heading level0 col1" data-quarto-table-cell-role="th">Mean</th>
-<th id="T_fc7f0_level0_col2" class="col_heading level0 col2" data-quarto-table-cell-role="th">Std Dev</th>
+<th id="T_942ad_level0_col0" class="col_heading level0 col0" data-quarto-table-cell-role="th">Metric</th>
+<th id="T_942ad_level0_col1" class="col_heading level0 col1" data-quarto-table-cell-role="th">Mean</th>
+<th id="T_942ad_level0_col2" class="col_heading level0 col2" data-quarto-table-cell-role="th">Std Dev</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td id="T_fc7f0_row0_col0" class="data row0 col0">Accuracy</td>
-<td id="T_fc7f0_row0_col1" class="data row0 col1">0.8002</td>
-<td id="T_fc7f0_row0_col2" class="data row0 col2">0.0118</td>
+<td id="T_942ad_row0_col0" class="data row0 col0">Accuracy</td>
+<td id="T_942ad_row0_col1" class="data row0 col1">0.8009</td>
+<td id="T_942ad_row0_col2" class="data row0 col2">0.0115</td>
 </tr>
 <tr class="even">
-<td id="T_fc7f0_row1_col0" class="data row1 col0">ROC-AUC</td>
-<td id="T_fc7f0_row1_col1" class="data row1 col1">0.8448</td>
-<td id="T_fc7f0_row1_col2" class="data row1 col2">0.0054</td>
+<td id="T_942ad_row1_col0" class="data row1 col0">ROC-AUC</td>
+<td id="T_942ad_row1_col1" class="data row1 col1">0.8451</td>
+<td id="T_942ad_row1_col2" class="data row1 col2">0.0053</td>
 </tr>
 <tr class="odd">
-<td id="T_fc7f0_row2_col0" class="data row2 col0">Recall</td>
-<td id="T_fc7f0_row2_col1" class="data row2 col1">0.5351</td>
-<td id="T_fc7f0_row2_col2" class="data row2 col2">0.0222</td>
+<td id="T_942ad_row2_col0" class="data row2 col0">Recall</td>
+<td id="T_942ad_row2_col1" class="data row2 col1">0.5351</td>
+<td id="T_942ad_row2_col2" class="data row2 col2">0.0210</td>
 </tr>
 <tr class="even">
-<td id="T_fc7f0_row3_col0" class="data row3 col0">F1</td>
-<td id="T_fc7f0_row3_col1" class="data row3 col1">0.5874</td>
-<td id="T_fc7f0_row3_col2" class="data row3 col2">0.0226</td>
+<td id="T_942ad_row3_col0" class="data row3 col0">F1</td>
+<td id="T_942ad_row3_col1" class="data row3 col1">0.5883</td>
+<td id="T_942ad_row3_col2" class="data row3 col2">0.0219</td>
 </tr>
 </tbody>
 </table>
 </div>
 </div>
-<p>The results are consistent across all five folds. The ROC-AUC averaged 0.8448 with a standard deviation of 0.005, which indicates the model is stable and not overfitting to the training data.</p>
+<p>The results are consistent across all five folds. The ROC-AUC averaged 0.8451 with a standard deviation of 0.005, which indicates the model is stable and not overfitting to the training data.</p>
 </section>
 <section id="feature-importance" class="level3" data-number="5.4">
 <h3 data-number="5.4" class="anchored" data-anchor-id="feature-importance"><span class="header-section-number">5.4</span> Feature Importance</h3>
@@ -756,12 +759,12 @@ weighted avg       0.79      0.80      0.79      1407
 </div>
 </div>
 </div>
-<p>Red bars indicate variables that increase the likelihood of churn, while blue bars indicate variables that reduce it. <code>MonthlyCharges</code> (+0.89) and <code>tenure</code> (-0.82) remain the two strongest variables, nearly equal in size but pointing in opposite directions. Higher bills push customers toward leaving, while longer customer relationships pull them away from it.</p>
+<p>Red bars indicate variables that increase the likelihood of churn, while blue bars indicate variables that reduce it. <code>MonthlyCharges</code> (+0.72) and <code>tenure</code> (-0.81) remain the two strongest individual predictors. Among the interaction terms, two-year fiber optic customers show the highest churn risk of all contract-service combinations, which may reflect customers locked into long-term contracts who feel under-served by their internet service. In contrast, customers on long-term contracts with no internet service show the lowest churn, suggesting that simpler, phone-only plans attract a more stable customer base.</p>
 </section>
 </section>
 <section id="conclusions" class="level2" data-number="6">
 <h2 data-number="6" class="anchored" data-anchor-id="conclusions"><span class="header-section-number">6</span> Conclusions</h2>
-<p>The logistic regression model shows that churn in this telecom dataset is quite predictable. At the default threshold, the interaction model achieves an ROC-AUC of 0.8340 and overall accuracy of 79.8%. By lowering the classification threshold to <code>0.30</code>, the model meets the project’s churn recall target of <code>75%</code>. Cross-validation confirms these results hold across different subsets of the data, with a stable ROC-AUC of 0.8448 across five folds.</p>
+<p>The logistic regression model shows that churn in this telecom dataset is quite predictable. At the default threshold, the interaction model achieves an ROC-AUC of 0.8341 and overall accuracy of 80.1%. By lowering the classification threshold to <code>0.30</code>, the model meets the project’s churn recall target of <code>75%</code>. Cross-validation confirms these results hold across different subsets of the data, with a stable ROC-AUC of 0.8451 across five folds.</p>
 <p>Three findings stand out. First, contract type is the clearest signal: month-to-month customers churn at 42.7%, compared to 2.8% for customers on two-year contracts. Second, monthly charges consistently increase churn risk, which points to price sensitivity as a real factor. Third, tenure works in the opposite direction: customers who have been around longer are much less likely to leave. This means early retention efforts are especially valuable.</p>
 </section>
 <section id="practical-implications" class="level2" data-number="7">
@@ -1478,180 +1481,184 @@ weighted avg       0.79      0.80      0.79      1407
 <span id="cb11-257"><a href="#cb11-257" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb11-258"><a href="#cb11-258" aria-hidden="true" tabindex="-1"></a><span class="fu">### Logistic Regression Models</span></span>
 <span id="cb11-259"><a href="#cb11-259" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-260"><a href="#cb11-260" aria-hidden="true" tabindex="-1"></a>We built two models. The **baseline model** uses all available features after preprocessing. The **interaction model** adds one extra variable: the product of the fiber optic indicator (<span class="in">`InternetService_Fiber optic`</span>) and the month-to-month indicator (<span class="in">`Contract_One year`</span>'s complement), which lets the model capture whether those two variables together have a stronger or weaker effect on churn than either one alone.</span>
+<span id="cb11-260"><a href="#cb11-260" aria-hidden="true" tabindex="-1"></a>We built two models. The **baseline model** uses all available features after pre-processing. The **interaction model** extends the baseline by adding four interaction terms that capture the combined effect of contract type and internet service on churn: one-year contract × fiber optic, two-year contract × fiber optic, one-year contract × no internet, and two-year contract × no internet. Since month-to-month and DSL are the reference categories, their effects are captured in the model intercept and serve as the baseline against which all other combinations are compared.</span>
 <span id="cb11-261"><a href="#cb11-261" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb11-262"><a href="#cb11-262" aria-hidden="true" tabindex="-1"></a>Logistic regression was chosen because its output is easy to interpret. Each coefficient tells you the direction and size of a variable's effect on the odds of churning. Given the business goal, **churn recall was treated as the most important metric**, because missing a customer who is about to leave is more costly than incorrectly flagging one who would have stayed.</span>
-<span id="cb11-263"><a href="#cb11-263" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-264"><a href="#cb11-264" aria-hidden="true" tabindex="-1"></a><span class="fu">## Results</span></span>
-<span id="cb11-265"><a href="#cb11-265" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-266"><a href="#cb11-266" aria-hidden="true" tabindex="-1"></a><span class="fu">### Model Performance</span></span>
-<span id="cb11-267"><a href="#cb11-267" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-270"><a href="#cb11-270" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
-<span id="cb11-271"><a href="#cb11-271" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: model-results</span></span>
-<span id="cb11-272"><a href="#cb11-272" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: "Confusion Matrix and ROC Curve - Interaction Model"</span></span>
-<span id="cb11-273"><a href="#cb11-273" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-274"><a href="#cb11-274" aria-hidden="true" tabindex="-1"></a>X_train_int <span class="op">=</span> X_train.copy()</span>
-<span id="cb11-275"><a href="#cb11-275" aria-hidden="true" tabindex="-1"></a>X_test_int  <span class="op">=</span> X_test.copy()</span>
-<span id="cb11-276"><a href="#cb11-276" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-277"><a href="#cb11-277" aria-hidden="true" tabindex="-1"></a><span class="co"># Interaction term: Fiber optic × no long-term contract</span></span>
-<span id="cb11-278"><a href="#cb11-278" aria-hidden="true" tabindex="-1"></a>X_train_int[<span class="st">'Fiber_x_MTM'</span>] <span class="op">=</span> (X_train[<span class="st">'InternetService_Fiber optic'</span>] <span class="op">*</span></span>
-<span id="cb11-279"><a href="#cb11-279" aria-hidden="true" tabindex="-1"></a>                               (<span class="dv">1</span> <span class="op">-</span> X_train.get(<span class="st">'Contract_One year'</span>, <span class="dv">0</span>) <span class="op">-</span></span>
-<span id="cb11-280"><a href="#cb11-280" aria-hidden="true" tabindex="-1"></a>                                    X_train.get(<span class="st">'Contract_Two year'</span>, <span class="dv">0</span>)))</span>
-<span id="cb11-281"><a href="#cb11-281" aria-hidden="true" tabindex="-1"></a>X_test_int[<span class="st">'Fiber_x_MTM'</span>]  <span class="op">=</span> (X_test[<span class="st">'InternetService_Fiber optic'</span>] <span class="op">*</span></span>
-<span id="cb11-282"><a href="#cb11-282" aria-hidden="true" tabindex="-1"></a>                               (<span class="dv">1</span> <span class="op">-</span> X_test.get(<span class="st">'Contract_One year'</span>, <span class="dv">0</span>) <span class="op">-</span></span>
-<span id="cb11-283"><a href="#cb11-283" aria-hidden="true" tabindex="-1"></a>                                    X_test.get(<span class="st">'Contract_Two year'</span>, <span class="dv">0</span>)))</span>
-<span id="cb11-284"><a href="#cb11-284" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-285"><a href="#cb11-285" aria-hidden="true" tabindex="-1"></a>scaler_int <span class="op">=</span> StandardScaler()</span>
-<span id="cb11-286"><a href="#cb11-286" aria-hidden="true" tabindex="-1"></a>X_train_int_scaled <span class="op">=</span> scaler_int.fit_transform(X_train_int)</span>
-<span id="cb11-287"><a href="#cb11-287" aria-hidden="true" tabindex="-1"></a>X_test_int_scaled  <span class="op">=</span> scaler_int.transform(X_test_int)</span>
+<span id="cb11-263"><a href="#cb11-263" aria-hidden="true" tabindex="-1"></a>Logistic regression was chosen because its output is easy to interpret. Each coefficient tells you the direction and size of a variable's effect on the odds of churning. Given the business goal, **churn recall was treated as the most important metric**, because missing a customer who is about to leave is more costly than incorrectly flagging one who would have stayed.</span>
+<span id="cb11-264"><a href="#cb11-264" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-265"><a href="#cb11-265" aria-hidden="true" tabindex="-1"></a><span class="fu">## Results</span></span>
+<span id="cb11-266"><a href="#cb11-266" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-267"><a href="#cb11-267" aria-hidden="true" tabindex="-1"></a><span class="fu">### Model Performance</span></span>
+<span id="cb11-268"><a href="#cb11-268" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-271"><a href="#cb11-271" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb11-272"><a href="#cb11-272" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: model-results</span></span>
+<span id="cb11-273"><a href="#cb11-273" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: "Confusion Matrix and ROC Curve — Interaction Model"</span></span>
+<span id="cb11-274"><a href="#cb11-274" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-275"><a href="#cb11-275" aria-hidden="true" tabindex="-1"></a>X_train_int <span class="op">=</span> X_train.copy()</span>
+<span id="cb11-276"><a href="#cb11-276" aria-hidden="true" tabindex="-1"></a>X_test_int  <span class="op">=</span> X_test.copy()</span>
+<span id="cb11-277"><a href="#cb11-277" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-278"><a href="#cb11-278" aria-hidden="true" tabindex="-1"></a><span class="co"># Four interaction terms (Harrison)</span></span>
+<span id="cb11-279"><a href="#cb11-279" aria-hidden="true" tabindex="-1"></a>X_train_int[<span class="st">'Contract1_x_FiberOptic'</span>] <span class="op">=</span> X_train[<span class="st">'Contract_One year'</span>] <span class="op">*</span> X_train[<span class="st">'InternetService_Fiber optic'</span>]</span>
+<span id="cb11-280"><a href="#cb11-280" aria-hidden="true" tabindex="-1"></a>X_train_int[<span class="st">'Contract2_x_FiberOptic'</span>] <span class="op">=</span> X_train[<span class="st">'Contract_Two year'</span>] <span class="op">*</span> X_train[<span class="st">'InternetService_Fiber optic'</span>]</span>
+<span id="cb11-281"><a href="#cb11-281" aria-hidden="true" tabindex="-1"></a>X_train_int[<span class="st">'Contract1_x_NoInternet'</span>] <span class="op">=</span> X_train[<span class="st">'Contract_One year'</span>] <span class="op">*</span> X_train[<span class="st">'InternetService_No'</span>]</span>
+<span id="cb11-282"><a href="#cb11-282" aria-hidden="true" tabindex="-1"></a>X_train_int[<span class="st">'Contract2_x_NoInternet'</span>] <span class="op">=</span> X_train[<span class="st">'Contract_Two year'</span>] <span class="op">*</span> X_train[<span class="st">'InternetService_No'</span>]</span>
+<span id="cb11-283"><a href="#cb11-283" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-284"><a href="#cb11-284" aria-hidden="true" tabindex="-1"></a>X_test_int[<span class="st">'Contract1_x_FiberOptic'</span>] <span class="op">=</span> X_test[<span class="st">'Contract_One year'</span>] <span class="op">*</span> X_test[<span class="st">'InternetService_Fiber optic'</span>]</span>
+<span id="cb11-285"><a href="#cb11-285" aria-hidden="true" tabindex="-1"></a>X_test_int[<span class="st">'Contract2_x_FiberOptic'</span>] <span class="op">=</span> X_test[<span class="st">'Contract_Two year'</span>] <span class="op">*</span> X_test[<span class="st">'InternetService_Fiber optic'</span>]</span>
+<span id="cb11-286"><a href="#cb11-286" aria-hidden="true" tabindex="-1"></a>X_test_int[<span class="st">'Contract1_x_NoInternet'</span>] <span class="op">=</span> X_test[<span class="st">'Contract_One year'</span>] <span class="op">*</span> X_test[<span class="st">'InternetService_No'</span>]</span>
+<span id="cb11-287"><a href="#cb11-287" aria-hidden="true" tabindex="-1"></a>X_test_int[<span class="st">'Contract2_x_NoInternet'</span>] <span class="op">=</span> X_test[<span class="st">'Contract_Two year'</span>] <span class="op">*</span> X_test[<span class="st">'InternetService_No'</span>]</span>
 <span id="cb11-288"><a href="#cb11-288" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-289"><a href="#cb11-289" aria-hidden="true" tabindex="-1"></a>lr_int <span class="op">=</span> LogisticRegression(random_state<span class="op">=</span><span class="dv">42</span>, max_iter<span class="op">=</span><span class="dv">1000</span>)</span>
-<span id="cb11-290"><a href="#cb11-290" aria-hidden="true" tabindex="-1"></a>lr_int.fit(X_train_int_scaled, y_train)</span>
-<span id="cb11-291"><a href="#cb11-291" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-292"><a href="#cb11-292" aria-hidden="true" tabindex="-1"></a>y_pred_int  <span class="op">=</span> lr_int.predict(X_test_int_scaled)</span>
-<span id="cb11-293"><a href="#cb11-293" aria-hidden="true" tabindex="-1"></a>y_proba_int <span class="op">=</span> lr_int.predict_proba(X_test_int_scaled)[:, <span class="dv">1</span>]</span>
-<span id="cb11-294"><a href="#cb11-294" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-295"><a href="#cb11-295" aria-hidden="true" tabindex="-1"></a>roc_auc_int       <span class="op">=</span> roc_auc_score(y_test, y_proba_int)</span>
-<span id="cb11-296"><a href="#cb11-296" aria-hidden="true" tabindex="-1"></a>report_int        <span class="op">=</span> classification_report(y_test, y_pred_int,</span>
-<span id="cb11-297"><a href="#cb11-297" aria-hidden="true" tabindex="-1"></a>                                          target_names<span class="op">=</span>[<span class="st">'No Churn'</span>,<span class="st">'Churn'</span>],</span>
-<span id="cb11-298"><a href="#cb11-298" aria-hidden="true" tabindex="-1"></a>                                          output_dict<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb11-299"><a href="#cb11-299" aria-hidden="true" tabindex="-1"></a>accuracy_int      <span class="op">=</span> report_int[<span class="st">'accuracy'</span>]</span>
-<span id="cb11-300"><a href="#cb11-300" aria-hidden="true" tabindex="-1"></a>churn_recall_int  <span class="op">=</span> report_int[<span class="st">'Churn'</span>][<span class="st">'recall'</span>]</span>
-<span id="cb11-301"><a href="#cb11-301" aria-hidden="true" tabindex="-1"></a>churn_precision_int <span class="op">=</span> report_int[<span class="st">'Churn'</span>][<span class="st">'precision'</span>]</span>
-<span id="cb11-302"><a href="#cb11-302" aria-hidden="true" tabindex="-1"></a>churn_f1_int      <span class="op">=</span> report_int[<span class="st">'Churn'</span>][<span class="st">'f1-score'</span>]</span>
-<span id="cb11-303"><a href="#cb11-303" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-304"><a href="#cb11-304" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== Interaction Model Performance ==="</span>)</span>
-<span id="cb11-305"><a href="#cb11-305" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"ROC-AUC: </span><span class="sc">{</span>roc_auc_int<span class="sc">:.4f}</span><span class="ss">"</span>)</span>
-<span id="cb11-306"><a href="#cb11-306" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(classification_report(y_test, y_pred_int, target_names<span class="op">=</span>[<span class="st">'No Churn'</span>,<span class="st">'Churn'</span>]))</span>
+<span id="cb11-289"><a href="#cb11-289" aria-hidden="true" tabindex="-1"></a>scaler_int <span class="op">=</span> StandardScaler()</span>
+<span id="cb11-290"><a href="#cb11-290" aria-hidden="true" tabindex="-1"></a>X_train_int_scaled <span class="op">=</span> scaler_int.fit_transform(X_train_int)</span>
+<span id="cb11-291"><a href="#cb11-291" aria-hidden="true" tabindex="-1"></a>X_test_int_scaled  <span class="op">=</span> scaler_int.transform(X_test_int)</span>
+<span id="cb11-292"><a href="#cb11-292" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-293"><a href="#cb11-293" aria-hidden="true" tabindex="-1"></a>lr_int <span class="op">=</span> LogisticRegression(random_state<span class="op">=</span><span class="dv">42</span>, max_iter<span class="op">=</span><span class="dv">1000</span>)</span>
+<span id="cb11-294"><a href="#cb11-294" aria-hidden="true" tabindex="-1"></a>lr_int.fit(X_train_int_scaled, y_train)</span>
+<span id="cb11-295"><a href="#cb11-295" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-296"><a href="#cb11-296" aria-hidden="true" tabindex="-1"></a>y_pred_int  <span class="op">=</span> lr_int.predict(X_test_int_scaled)</span>
+<span id="cb11-297"><a href="#cb11-297" aria-hidden="true" tabindex="-1"></a>y_proba_int <span class="op">=</span> lr_int.predict_proba(X_test_int_scaled)[:, <span class="dv">1</span>]</span>
+<span id="cb11-298"><a href="#cb11-298" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-299"><a href="#cb11-299" aria-hidden="true" tabindex="-1"></a>roc_auc_int         <span class="op">=</span> roc_auc_score(y_test, y_proba_int)</span>
+<span id="cb11-300"><a href="#cb11-300" aria-hidden="true" tabindex="-1"></a>report_int          <span class="op">=</span> classification_report(y_test, y_pred_int,</span>
+<span id="cb11-301"><a href="#cb11-301" aria-hidden="true" tabindex="-1"></a>                                            target_names<span class="op">=</span>[<span class="st">'No Churn'</span>,<span class="st">'Churn'</span>],</span>
+<span id="cb11-302"><a href="#cb11-302" aria-hidden="true" tabindex="-1"></a>                                            output_dict<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb11-303"><a href="#cb11-303" aria-hidden="true" tabindex="-1"></a>accuracy_int        <span class="op">=</span> report_int[<span class="st">'accuracy'</span>]</span>
+<span id="cb11-304"><a href="#cb11-304" aria-hidden="true" tabindex="-1"></a>churn_recall_int    <span class="op">=</span> report_int[<span class="st">'Churn'</span>][<span class="st">'recall'</span>]</span>
+<span id="cb11-305"><a href="#cb11-305" aria-hidden="true" tabindex="-1"></a>churn_precision_int <span class="op">=</span> report_int[<span class="st">'Churn'</span>][<span class="st">'precision'</span>]</span>
+<span id="cb11-306"><a href="#cb11-306" aria-hidden="true" tabindex="-1"></a>churn_f1_int        <span class="op">=</span> report_int[<span class="st">'Churn'</span>][<span class="st">'f1-score'</span>]</span>
 <span id="cb11-307"><a href="#cb11-307" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-308"><a href="#cb11-308" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">4</span>))</span>
-<span id="cb11-309"><a href="#cb11-309" aria-hidden="true" tabindex="-1"></a>cm <span class="op">=</span> confusion_matrix(y_test, y_pred_int)</span>
-<span id="cb11-310"><a href="#cb11-310" aria-hidden="true" tabindex="-1"></a>sns.heatmap(cm, annot<span class="op">=</span><span class="va">True</span>, fmt<span class="op">=</span><span class="st">'d'</span>, cmap<span class="op">=</span><span class="st">'Blues'</span>, ax<span class="op">=</span>axes[<span class="dv">0</span>],</span>
-<span id="cb11-311"><a href="#cb11-311" aria-hidden="true" tabindex="-1"></a>            xticklabels<span class="op">=</span>[<span class="st">'No Churn'</span>,<span class="st">'Churn'</span>], yticklabels<span class="op">=</span>[<span class="st">'No Churn'</span>,<span class="st">'Churn'</span>])</span>
-<span id="cb11-312"><a href="#cb11-312" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_title(<span class="st">'Confusion Matrix - Interaction Model'</span>)</span>
-<span id="cb11-313"><a href="#cb11-313" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_ylabel(<span class="st">'Actual'</span>)</span>
-<span id="cb11-314"><a href="#cb11-314" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_xlabel(<span class="st">'Predicted'</span>)</span>
-<span id="cb11-315"><a href="#cb11-315" aria-hidden="true" tabindex="-1"></a>RocCurveDisplay.from_predictions(y_test, y_proba_int, ax<span class="op">=</span>axes[<span class="dv">1</span>], color<span class="op">=</span><span class="st">'tomato'</span>)</span>
-<span id="cb11-316"><a href="#cb11-316" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].plot([<span class="dv">0</span>,<span class="dv">1</span>],[<span class="dv">0</span>,<span class="dv">1</span>],<span class="st">'k--'</span>)</span>
-<span id="cb11-317"><a href="#cb11-317" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_title(<span class="st">'ROC Curve - Interaction Model'</span>)</span>
-<span id="cb11-318"><a href="#cb11-318" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
-<span id="cb11-319"><a href="#cb11-319" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
-<span id="cb11-320"><a href="#cb11-320" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb11-321"><a href="#cb11-321" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-322"><a href="#cb11-322" aria-hidden="true" tabindex="-1"></a>The interaction model achieved an ROC-AUC of <span class="in">`{python} f"{roc_auc_int:.4f}"`</span>, exceeding the target of <span class="in">`0.80`</span>. Overall accuracy was <span class="in">`{python} f"{accuracy_int:.1%}"`</span>, just under the <span class="in">`80%`</span> target. Churn recall at the default threshold of <span class="in">`0.50`</span> was <span class="in">`{python} f"{churn_recall_int:.1%}"`</span>, which falls short of the <span class="in">`75%`</span> target. The threshold tuning section below addresses this directly.</span>
-<span id="cb11-323"><a href="#cb11-323" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-324"><a href="#cb11-324" aria-hidden="true" tabindex="-1"></a><span class="fu">### Threshold Tuning</span></span>
+<span id="cb11-308"><a href="#cb11-308" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"=== Interaction Model Performance ==="</span>)</span>
+<span id="cb11-309"><a href="#cb11-309" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"ROC-AUC: </span><span class="sc">{</span>roc_auc_int<span class="sc">:.4f}</span><span class="ss">"</span>)</span>
+<span id="cb11-310"><a href="#cb11-310" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(classification_report(y_test, y_pred_int, target_names<span class="op">=</span>[<span class="st">'No Churn'</span>,<span class="st">'Churn'</span>]))</span>
+<span id="cb11-311"><a href="#cb11-311" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-312"><a href="#cb11-312" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="dv">4</span>))</span>
+<span id="cb11-313"><a href="#cb11-313" aria-hidden="true" tabindex="-1"></a>cm <span class="op">=</span> confusion_matrix(y_test, y_pred_int)</span>
+<span id="cb11-314"><a href="#cb11-314" aria-hidden="true" tabindex="-1"></a>sns.heatmap(cm, annot<span class="op">=</span><span class="va">True</span>, fmt<span class="op">=</span><span class="st">'d'</span>, cmap<span class="op">=</span><span class="st">'Blues'</span>, ax<span class="op">=</span>axes[<span class="dv">0</span>],</span>
+<span id="cb11-315"><a href="#cb11-315" aria-hidden="true" tabindex="-1"></a>            xticklabels<span class="op">=</span>[<span class="st">'No Churn'</span>,<span class="st">'Churn'</span>], yticklabels<span class="op">=</span>[<span class="st">'No Churn'</span>,<span class="st">'Churn'</span>])</span>
+<span id="cb11-316"><a href="#cb11-316" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_title(<span class="st">'Confusion Matrix - Interaction Model'</span>)</span>
+<span id="cb11-317"><a href="#cb11-317" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_ylabel(<span class="st">'Actual'</span>)</span>
+<span id="cb11-318"><a href="#cb11-318" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_xlabel(<span class="st">'Predicted'</span>)</span>
+<span id="cb11-319"><a href="#cb11-319" aria-hidden="true" tabindex="-1"></a>RocCurveDisplay.from_predictions(y_test, y_proba_int, ax<span class="op">=</span>axes[<span class="dv">1</span>], color<span class="op">=</span><span class="st">'tomato'</span>)</span>
+<span id="cb11-320"><a href="#cb11-320" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].plot([<span class="dv">0</span>,<span class="dv">1</span>],[<span class="dv">0</span>,<span class="dv">1</span>],<span class="st">'k--'</span>)</span>
+<span id="cb11-321"><a href="#cb11-321" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_title(<span class="st">'ROC Curve - Interaction Model'</span>)</span>
+<span id="cb11-322"><a href="#cb11-322" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb11-323"><a href="#cb11-323" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb11-324"><a href="#cb11-324" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb11-325"><a href="#cb11-325" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-326"><a href="#cb11-326" aria-hidden="true" tabindex="-1"></a>By default, the model predicts churn when the estimated probability is <span class="in">`0.50`</span> or higher. Lowering this cutoff means the model flags more customers as likely churners, which improves recall at the cost of flagging some customers who would have stayed. The table below shows how performance changes across different thresholds.</span>
+<span id="cb11-326"><a href="#cb11-326" aria-hidden="true" tabindex="-1"></a>The interaction model achieved an ROC-AUC of <span class="in">`{python} f"{roc_auc_int:.4f}"`</span>, exceeding the target of <span class="in">`0.80`</span>. Overall accuracy was <span class="in">`{python} f"{accuracy_int:.1%}"`</span>, just under the <span class="in">`80%`</span> target. Churn recall at the default threshold of <span class="in">`0.50`</span> was <span class="in">`{python} f"{churn_recall_int:.1%}"`</span>, which falls short of the <span class="in">`75%`</span> target. The threshold tuning section below addresses this directly.</span>
 <span id="cb11-327"><a href="#cb11-327" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-330"><a href="#cb11-330" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
-<span id="cb11-331"><a href="#cb11-331" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: threshold-tuning</span></span>
-<span id="cb11-332"><a href="#cb11-332" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-333"><a href="#cb11-333" aria-hidden="true" tabindex="-1"></a>thresholds <span class="op">=</span> [<span class="fl">0.30</span>, <span class="fl">0.35</span>, <span class="fl">0.40</span>, <span class="fl">0.45</span>, <span class="fl">0.50</span>]</span>
-<span id="cb11-334"><a href="#cb11-334" aria-hidden="true" tabindex="-1"></a>rows <span class="op">=</span> []</span>
-<span id="cb11-335"><a href="#cb11-335" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> t <span class="kw">in</span> thresholds:</span>
-<span id="cb11-336"><a href="#cb11-336" aria-hidden="true" tabindex="-1"></a>    y_pred_t <span class="op">=</span> (y_proba_int <span class="op">&gt;=</span> t).astype(<span class="bu">int</span>)</span>
-<span id="cb11-337"><a href="#cb11-337" aria-hidden="true" tabindex="-1"></a>    report <span class="op">=</span> classification_report(y_test, y_pred_t,</span>
-<span id="cb11-338"><a href="#cb11-338" aria-hidden="true" tabindex="-1"></a>                                   target_names<span class="op">=</span>[<span class="st">'No Churn'</span>,<span class="st">'Churn'</span>],</span>
-<span id="cb11-339"><a href="#cb11-339" aria-hidden="true" tabindex="-1"></a>                                   output_dict<span class="op">=</span><span class="va">True</span>)</span>
-<span id="cb11-340"><a href="#cb11-340" aria-hidden="true" tabindex="-1"></a>    rows.append({</span>
-<span id="cb11-341"><a href="#cb11-341" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Threshold'</span>: t,</span>
-<span id="cb11-342"><a href="#cb11-342" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Accuracy'</span>:  <span class="ss">f"</span><span class="sc">{</span>report[<span class="st">'accuracy'</span>]<span class="sc">:.3f}</span><span class="ss">"</span>,</span>
-<span id="cb11-343"><a href="#cb11-343" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Churn Recall'</span>: <span class="ss">f"</span><span class="sc">{</span>report[<span class="st">'Churn'</span>][<span class="st">'recall'</span>]<span class="sc">:.3f}</span><span class="ss">"</span>,</span>
-<span id="cb11-344"><a href="#cb11-344" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Churn Precision'</span>: <span class="ss">f"</span><span class="sc">{</span>report[<span class="st">'Churn'</span>][<span class="st">'precision'</span>]<span class="sc">:.3f}</span><span class="ss">"</span>,</span>
-<span id="cb11-345"><a href="#cb11-345" aria-hidden="true" tabindex="-1"></a>        <span class="st">'F1 Score'</span>: <span class="ss">f"</span><span class="sc">{</span>report[<span class="st">'Churn'</span>][<span class="st">'f1-score'</span>]<span class="sc">:.3f}</span><span class="ss">"</span></span>
-<span id="cb11-346"><a href="#cb11-346" aria-hidden="true" tabindex="-1"></a>    })</span>
-<span id="cb11-347"><a href="#cb11-347" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-348"><a href="#cb11-348" aria-hidden="true" tabindex="-1"></a>threshold_df <span class="op">=</span> pd.DataFrame(rows)</span>
-<span id="cb11-349"><a href="#cb11-349" aria-hidden="true" tabindex="-1"></a>t30 <span class="op">=</span> threshold_df[threshold_df[<span class="st">'Threshold'</span>] <span class="op">==</span> <span class="fl">0.30</span>].iloc[<span class="dv">0</span>]</span>
-<span id="cb11-350"><a href="#cb11-350" aria-hidden="true" tabindex="-1"></a>t30_recall    <span class="op">=</span> <span class="bu">float</span>(t30[<span class="st">'Churn Recall'</span>])</span>
-<span id="cb11-351"><a href="#cb11-351" aria-hidden="true" tabindex="-1"></a>t30_precision <span class="op">=</span> <span class="bu">float</span>(t30[<span class="st">'Churn Precision'</span>])</span>
-<span id="cb11-352"><a href="#cb11-352" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-353"><a href="#cb11-353" aria-hidden="true" tabindex="-1"></a>threshold_df.style.hide(axis<span class="op">=</span><span class="st">'index'</span>)</span>
-<span id="cb11-354"><a href="#cb11-354" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb11-355"><a href="#cb11-355" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-356"><a href="#cb11-356" aria-hidden="true" tabindex="-1"></a>At a threshold of <span class="in">`0.30`</span>, the model catches <span class="in">`{python} f"{t30_recall:.1%}"`</span> of actual churners, meeting the recall target from the proposal. The trade-off is that precision drops to <span class="in">`{python} f"{t30_precision:.1%}"`</span>, meaning about half of the customers the model flags would not have actually churned. In a retention context this is an acceptable trade-off: reaching out to a loyal customer with a discount offer costs little, while doing nothing about a customer who is about to leave is far more expensive.</span>
-<span id="cb11-357"><a href="#cb11-357" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-358"><a href="#cb11-358" aria-hidden="true" tabindex="-1"></a><span class="fu">### Cross-Validation</span></span>
+<span id="cb11-328"><a href="#cb11-328" aria-hidden="true" tabindex="-1"></a><span class="fu">### Threshold Tuning</span></span>
+<span id="cb11-329"><a href="#cb11-329" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-330"><a href="#cb11-330" aria-hidden="true" tabindex="-1"></a>By default, the model predicts churn when the estimated probability is <span class="in">`0.50`</span> or higher. Lowering this cutoff means the model flags more customers as likely churners, which improves recall at the cost of flagging some customers who would have stayed. The table below shows how performance changes across different thresholds.</span>
+<span id="cb11-331"><a href="#cb11-331" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-334"><a href="#cb11-334" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb11-335"><a href="#cb11-335" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: threshold-tuning</span></span>
+<span id="cb11-336"><a href="#cb11-336" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-337"><a href="#cb11-337" aria-hidden="true" tabindex="-1"></a>thresholds <span class="op">=</span> [<span class="fl">0.30</span>, <span class="fl">0.35</span>, <span class="fl">0.40</span>, <span class="fl">0.45</span>, <span class="fl">0.50</span>]</span>
+<span id="cb11-338"><a href="#cb11-338" aria-hidden="true" tabindex="-1"></a>rows <span class="op">=</span> []</span>
+<span id="cb11-339"><a href="#cb11-339" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> t <span class="kw">in</span> thresholds:</span>
+<span id="cb11-340"><a href="#cb11-340" aria-hidden="true" tabindex="-1"></a>    y_pred_t <span class="op">=</span> (y_proba_int <span class="op">&gt;=</span> t).astype(<span class="bu">int</span>)</span>
+<span id="cb11-341"><a href="#cb11-341" aria-hidden="true" tabindex="-1"></a>    report <span class="op">=</span> classification_report(y_test, y_pred_t,</span>
+<span id="cb11-342"><a href="#cb11-342" aria-hidden="true" tabindex="-1"></a>                                   target_names<span class="op">=</span>[<span class="st">'No Churn'</span>,<span class="st">'Churn'</span>],</span>
+<span id="cb11-343"><a href="#cb11-343" aria-hidden="true" tabindex="-1"></a>                                   output_dict<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb11-344"><a href="#cb11-344" aria-hidden="true" tabindex="-1"></a>    rows.append({</span>
+<span id="cb11-345"><a href="#cb11-345" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Threshold'</span>: t,</span>
+<span id="cb11-346"><a href="#cb11-346" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Accuracy'</span>:  <span class="ss">f"</span><span class="sc">{</span>report[<span class="st">'accuracy'</span>]<span class="sc">:.3f}</span><span class="ss">"</span>,</span>
+<span id="cb11-347"><a href="#cb11-347" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Churn Recall'</span>: <span class="ss">f"</span><span class="sc">{</span>report[<span class="st">'Churn'</span>][<span class="st">'recall'</span>]<span class="sc">:.3f}</span><span class="ss">"</span>,</span>
+<span id="cb11-348"><a href="#cb11-348" aria-hidden="true" tabindex="-1"></a>        <span class="st">'Churn Precision'</span>: <span class="ss">f"</span><span class="sc">{</span>report[<span class="st">'Churn'</span>][<span class="st">'precision'</span>]<span class="sc">:.3f}</span><span class="ss">"</span>,</span>
+<span id="cb11-349"><a href="#cb11-349" aria-hidden="true" tabindex="-1"></a>        <span class="st">'F1 Score'</span>: <span class="ss">f"</span><span class="sc">{</span>report[<span class="st">'Churn'</span>][<span class="st">'f1-score'</span>]<span class="sc">:.3f}</span><span class="ss">"</span></span>
+<span id="cb11-350"><a href="#cb11-350" aria-hidden="true" tabindex="-1"></a>    })</span>
+<span id="cb11-351"><a href="#cb11-351" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-352"><a href="#cb11-352" aria-hidden="true" tabindex="-1"></a>threshold_df <span class="op">=</span> pd.DataFrame(rows)</span>
+<span id="cb11-353"><a href="#cb11-353" aria-hidden="true" tabindex="-1"></a>t30 <span class="op">=</span> threshold_df[threshold_df[<span class="st">'Threshold'</span>] <span class="op">==</span> <span class="fl">0.30</span>].iloc[<span class="dv">0</span>]</span>
+<span id="cb11-354"><a href="#cb11-354" aria-hidden="true" tabindex="-1"></a>t30_recall    <span class="op">=</span> <span class="bu">float</span>(t30[<span class="st">'Churn Recall'</span>])</span>
+<span id="cb11-355"><a href="#cb11-355" aria-hidden="true" tabindex="-1"></a>t30_precision <span class="op">=</span> <span class="bu">float</span>(t30[<span class="st">'Churn Precision'</span>])</span>
+<span id="cb11-356"><a href="#cb11-356" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-357"><a href="#cb11-357" aria-hidden="true" tabindex="-1"></a>threshold_df.style.hide(axis<span class="op">=</span><span class="st">'index'</span>)</span>
+<span id="cb11-358"><a href="#cb11-358" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb11-359"><a href="#cb11-359" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-360"><a href="#cb11-360" aria-hidden="true" tabindex="-1"></a>To check that the model's performance holds up on data it has not seen before, we ran 5-fold cross-validation on the training set.</span>
+<span id="cb11-360"><a href="#cb11-360" aria-hidden="true" tabindex="-1"></a>At a threshold of <span class="in">`0.30`</span>, the model catches <span class="in">`{python} f"{t30_recall:.1%}"`</span> of actual churners, meeting the recall target from the proposal. The trade-off is that precision drops to <span class="in">`{python} f"{t30_precision:.1%}"`</span>, meaning about half of the customers the model flags would not have actually churned. In a retention context this is an acceptable trade-off: reaching out to a loyal customer with a discount offer costs little, while doing nothing about a customer who is about to leave is far more expensive.</span>
 <span id="cb11-361"><a href="#cb11-361" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-364"><a href="#cb11-364" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
-<span id="cb11-365"><a href="#cb11-365" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: cross-validation</span></span>
-<span id="cb11-366"><a href="#cb11-366" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-367"><a href="#cb11-367" aria-hidden="true" tabindex="-1"></a>cv <span class="op">=</span> StratifiedKFold(n_splits<span class="op">=</span><span class="dv">5</span>, shuffle<span class="op">=</span><span class="va">True</span>, random_state<span class="op">=</span><span class="dv">42</span>)</span>
-<span id="cb11-368"><a href="#cb11-368" aria-hidden="true" tabindex="-1"></a>scoring <span class="op">=</span> {</span>
-<span id="cb11-369"><a href="#cb11-369" aria-hidden="true" tabindex="-1"></a>    <span class="st">'accuracy'</span>: <span class="st">'accuracy'</span>,</span>
-<span id="cb11-370"><a href="#cb11-370" aria-hidden="true" tabindex="-1"></a>    <span class="st">'roc_auc'</span>:  <span class="st">'roc_auc'</span>,</span>
-<span id="cb11-371"><a href="#cb11-371" aria-hidden="true" tabindex="-1"></a>    <span class="st">'recall'</span>:   make_scorer(recall_score),</span>
-<span id="cb11-372"><a href="#cb11-372" aria-hidden="true" tabindex="-1"></a>    <span class="st">'f1'</span>:       <span class="st">'f1'</span></span>
-<span id="cb11-373"><a href="#cb11-373" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb11-374"><a href="#cb11-374" aria-hidden="true" tabindex="-1"></a>cv_results <span class="op">=</span> cross_validate(</span>
-<span id="cb11-375"><a href="#cb11-375" aria-hidden="true" tabindex="-1"></a>    LogisticRegression(random_state<span class="op">=</span><span class="dv">42</span>, max_iter<span class="op">=</span><span class="dv">1000</span>),</span>
-<span id="cb11-376"><a href="#cb11-376" aria-hidden="true" tabindex="-1"></a>    scaler_int.fit_transform(X_train_int),</span>
-<span id="cb11-377"><a href="#cb11-377" aria-hidden="true" tabindex="-1"></a>    y_train, cv<span class="op">=</span>cv, scoring<span class="op">=</span>scoring)</span>
-<span id="cb11-378"><a href="#cb11-378" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-379"><a href="#cb11-379" aria-hidden="true" tabindex="-1"></a>cv_roc_mean <span class="op">=</span> cv_results[<span class="st">'test_roc_auc'</span>].mean()</span>
-<span id="cb11-380"><a href="#cb11-380" aria-hidden="true" tabindex="-1"></a>cv_roc_std  <span class="op">=</span> cv_results[<span class="st">'test_roc_auc'</span>].std()</span>
-<span id="cb11-381"><a href="#cb11-381" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-382"><a href="#cb11-382" aria-hidden="true" tabindex="-1"></a>cv_df <span class="op">=</span> pd.DataFrame({</span>
-<span id="cb11-383"><a href="#cb11-383" aria-hidden="true" tabindex="-1"></a>    <span class="st">'Metric'</span>:  [<span class="st">'Accuracy'</span>, <span class="st">'ROC-AUC'</span>, <span class="st">'Recall'</span>, <span class="st">'F1'</span>],</span>
-<span id="cb11-384"><a href="#cb11-384" aria-hidden="true" tabindex="-1"></a>    <span class="st">'Mean'</span>:    [cv_results[<span class="ss">f'test_</span><span class="sc">{</span>m<span class="sc">}</span><span class="ss">'</span>].mean() <span class="cf">for</span> m <span class="kw">in</span> [<span class="st">'accuracy'</span>,<span class="st">'roc_auc'</span>,<span class="st">'recall'</span>,<span class="st">'f1'</span>]],</span>
-<span id="cb11-385"><a href="#cb11-385" aria-hidden="true" tabindex="-1"></a>    <span class="st">'Std Dev'</span>: [cv_results[<span class="ss">f'test_</span><span class="sc">{</span>m<span class="sc">}</span><span class="ss">'</span>].std()  <span class="cf">for</span> m <span class="kw">in</span> [<span class="st">'accuracy'</span>,<span class="st">'roc_auc'</span>,<span class="st">'recall'</span>,<span class="st">'f1'</span>]]</span>
-<span id="cb11-386"><a href="#cb11-386" aria-hidden="true" tabindex="-1"></a>})</span>
-<span id="cb11-387"><a href="#cb11-387" aria-hidden="true" tabindex="-1"></a>cv_df[<span class="st">'Mean'</span>]    <span class="op">=</span> cv_df[<span class="st">'Mean'</span>].<span class="bu">map</span>(<span class="st">'</span><span class="sc">{:.4f}</span><span class="st">'</span>.<span class="bu">format</span>)</span>
-<span id="cb11-388"><a href="#cb11-388" aria-hidden="true" tabindex="-1"></a>cv_df[<span class="st">'Std Dev'</span>] <span class="op">=</span> cv_df[<span class="st">'Std Dev'</span>].<span class="bu">map</span>(<span class="st">'</span><span class="sc">{:.4f}</span><span class="st">'</span>.<span class="bu">format</span>)</span>
-<span id="cb11-389"><a href="#cb11-389" aria-hidden="true" tabindex="-1"></a>cv_df.style.hide(axis<span class="op">=</span><span class="st">'index'</span>)</span>
-<span id="cb11-390"><a href="#cb11-390" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb11-391"><a href="#cb11-391" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-392"><a href="#cb11-392" aria-hidden="true" tabindex="-1"></a>The results are consistent across all five folds. The ROC-AUC averaged <span class="in">`{python} f"{cv_roc_mean:.4f}"`</span> with a standard deviation of <span class="in">`{python} f"{cv_roc_std:.3f}"`</span>, which indicates the model is stable and not overfitting to the training data.</span>
-<span id="cb11-393"><a href="#cb11-393" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-394"><a href="#cb11-394" aria-hidden="true" tabindex="-1"></a><span class="fu">### Feature Importance</span></span>
+<span id="cb11-362"><a href="#cb11-362" aria-hidden="true" tabindex="-1"></a><span class="fu">### Cross-Validation</span></span>
+<span id="cb11-363"><a href="#cb11-363" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-364"><a href="#cb11-364" aria-hidden="true" tabindex="-1"></a>To check that the model's performance holds up on data it has not seen before, we ran 5-fold cross-validation on the training set.</span>
+<span id="cb11-365"><a href="#cb11-365" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-368"><a href="#cb11-368" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb11-369"><a href="#cb11-369" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: cross-validation</span></span>
+<span id="cb11-370"><a href="#cb11-370" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-371"><a href="#cb11-371" aria-hidden="true" tabindex="-1"></a>cv <span class="op">=</span> StratifiedKFold(n_splits<span class="op">=</span><span class="dv">5</span>, shuffle<span class="op">=</span><span class="va">True</span>, random_state<span class="op">=</span><span class="dv">42</span>)</span>
+<span id="cb11-372"><a href="#cb11-372" aria-hidden="true" tabindex="-1"></a>scoring <span class="op">=</span> {</span>
+<span id="cb11-373"><a href="#cb11-373" aria-hidden="true" tabindex="-1"></a>    <span class="st">'accuracy'</span>: <span class="st">'accuracy'</span>,</span>
+<span id="cb11-374"><a href="#cb11-374" aria-hidden="true" tabindex="-1"></a>    <span class="st">'roc_auc'</span>:  <span class="st">'roc_auc'</span>,</span>
+<span id="cb11-375"><a href="#cb11-375" aria-hidden="true" tabindex="-1"></a>    <span class="st">'recall'</span>:   make_scorer(recall_score),</span>
+<span id="cb11-376"><a href="#cb11-376" aria-hidden="true" tabindex="-1"></a>    <span class="st">'f1'</span>:       <span class="st">'f1'</span></span>
+<span id="cb11-377"><a href="#cb11-377" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb11-378"><a href="#cb11-378" aria-hidden="true" tabindex="-1"></a>cv_results <span class="op">=</span> cross_validate(</span>
+<span id="cb11-379"><a href="#cb11-379" aria-hidden="true" tabindex="-1"></a>    LogisticRegression(random_state<span class="op">=</span><span class="dv">42</span>, max_iter<span class="op">=</span><span class="dv">1000</span>),</span>
+<span id="cb11-380"><a href="#cb11-380" aria-hidden="true" tabindex="-1"></a>    scaler_int.fit_transform(X_train_int),</span>
+<span id="cb11-381"><a href="#cb11-381" aria-hidden="true" tabindex="-1"></a>    y_train, cv<span class="op">=</span>cv, scoring<span class="op">=</span>scoring)</span>
+<span id="cb11-382"><a href="#cb11-382" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-383"><a href="#cb11-383" aria-hidden="true" tabindex="-1"></a>cv_roc_mean <span class="op">=</span> cv_results[<span class="st">'test_roc_auc'</span>].mean()</span>
+<span id="cb11-384"><a href="#cb11-384" aria-hidden="true" tabindex="-1"></a>cv_roc_std  <span class="op">=</span> cv_results[<span class="st">'test_roc_auc'</span>].std()</span>
+<span id="cb11-385"><a href="#cb11-385" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-386"><a href="#cb11-386" aria-hidden="true" tabindex="-1"></a>cv_df <span class="op">=</span> pd.DataFrame({</span>
+<span id="cb11-387"><a href="#cb11-387" aria-hidden="true" tabindex="-1"></a>    <span class="st">'Metric'</span>:  [<span class="st">'Accuracy'</span>, <span class="st">'ROC-AUC'</span>, <span class="st">'Recall'</span>, <span class="st">'F1'</span>],</span>
+<span id="cb11-388"><a href="#cb11-388" aria-hidden="true" tabindex="-1"></a>    <span class="st">'Mean'</span>:    [cv_results[<span class="ss">f'test_</span><span class="sc">{</span>m<span class="sc">}</span><span class="ss">'</span>].mean() <span class="cf">for</span> m <span class="kw">in</span> [<span class="st">'accuracy'</span>,<span class="st">'roc_auc'</span>,<span class="st">'recall'</span>,<span class="st">'f1'</span>]],</span>
+<span id="cb11-389"><a href="#cb11-389" aria-hidden="true" tabindex="-1"></a>    <span class="st">'Std Dev'</span>: [cv_results[<span class="ss">f'test_</span><span class="sc">{</span>m<span class="sc">}</span><span class="ss">'</span>].std()  <span class="cf">for</span> m <span class="kw">in</span> [<span class="st">'accuracy'</span>,<span class="st">'roc_auc'</span>,<span class="st">'recall'</span>,<span class="st">'f1'</span>]]</span>
+<span id="cb11-390"><a href="#cb11-390" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb11-391"><a href="#cb11-391" aria-hidden="true" tabindex="-1"></a>cv_df[<span class="st">'Mean'</span>]    <span class="op">=</span> cv_df[<span class="st">'Mean'</span>].<span class="bu">map</span>(<span class="st">'</span><span class="sc">{:.4f}</span><span class="st">'</span>.<span class="bu">format</span>)</span>
+<span id="cb11-392"><a href="#cb11-392" aria-hidden="true" tabindex="-1"></a>cv_df[<span class="st">'Std Dev'</span>] <span class="op">=</span> cv_df[<span class="st">'Std Dev'</span>].<span class="bu">map</span>(<span class="st">'</span><span class="sc">{:.4f}</span><span class="st">'</span>.<span class="bu">format</span>)</span>
+<span id="cb11-393"><a href="#cb11-393" aria-hidden="true" tabindex="-1"></a>cv_df.style.hide(axis<span class="op">=</span><span class="st">'index'</span>)</span>
+<span id="cb11-394"><a href="#cb11-394" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb11-395"><a href="#cb11-395" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-398"><a href="#cb11-398" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
-<span id="cb11-399"><a href="#cb11-399" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: feature-importance</span></span>
-<span id="cb11-400"><a href="#cb11-400" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: "Top 15 Feature Coefficients - Interaction Model"</span></span>
-<span id="cb11-401"><a href="#cb11-401" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-402"><a href="#cb11-402" aria-hidden="true" tabindex="-1"></a>feature_names <span class="op">=</span> <span class="bu">list</span>(X_train_int.columns)</span>
-<span id="cb11-403"><a href="#cb11-403" aria-hidden="true" tabindex="-1"></a>coef_df <span class="op">=</span> pd.DataFrame({</span>
-<span id="cb11-404"><a href="#cb11-404" aria-hidden="true" tabindex="-1"></a>    <span class="st">'Feature'</span>: feature_names,</span>
-<span id="cb11-405"><a href="#cb11-405" aria-hidden="true" tabindex="-1"></a>    <span class="st">'Coefficient'</span>: lr_int.coef_[<span class="dv">0</span>]</span>
-<span id="cb11-406"><a href="#cb11-406" aria-hidden="true" tabindex="-1"></a>}).sort_values(<span class="st">'Coefficient'</span>, key<span class="op">=</span><span class="bu">abs</span>, ascending<span class="op">=</span><span class="va">False</span>).head(<span class="dv">15</span>)</span>
-<span id="cb11-407"><a href="#cb11-407" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-408"><a href="#cb11-408" aria-hidden="true" tabindex="-1"></a>top_pos_feature <span class="op">=</span> coef_df[coef_df[<span class="st">'Coefficient'</span>] <span class="op">&gt;</span> <span class="dv">0</span>].iloc[<span class="dv">0</span>]</span>
-<span id="cb11-409"><a href="#cb11-409" aria-hidden="true" tabindex="-1"></a>top_neg_feature <span class="op">=</span> coef_df[coef_df[<span class="st">'Coefficient'</span>] <span class="op">&lt;</span> <span class="dv">0</span>].iloc[<span class="dv">0</span>]</span>
-<span id="cb11-410"><a href="#cb11-410" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-411"><a href="#cb11-411" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">7</span>))</span>
-<span id="cb11-412"><a href="#cb11-412" aria-hidden="true" tabindex="-1"></a>colors <span class="op">=</span> [<span class="st">'tomato'</span> <span class="cf">if</span> c <span class="op">&gt;</span> <span class="dv">0</span> <span class="cf">else</span> <span class="st">'steelblue'</span> <span class="cf">for</span> c <span class="kw">in</span> coef_df[<span class="st">'Coefficient'</span>]]</span>
-<span id="cb11-413"><a href="#cb11-413" aria-hidden="true" tabindex="-1"></a>plt.barh(coef_df[<span class="st">'Feature'</span>], coef_df[<span class="st">'Coefficient'</span>], color<span class="op">=</span>colors)</span>
-<span id="cb11-414"><a href="#cb11-414" aria-hidden="true" tabindex="-1"></a>plt.axvline(<span class="dv">0</span>, color<span class="op">=</span><span class="st">'black'</span>, linewidth<span class="op">=</span><span class="fl">0.8</span>)</span>
-<span id="cb11-415"><a href="#cb11-415" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">'Top 15 Feature Coefficients - Interaction Model'</span>,</span>
-<span id="cb11-416"><a href="#cb11-416" aria-hidden="true" tabindex="-1"></a>          fontsize<span class="op">=</span><span class="dv">13</span>, fontweight<span class="op">=</span><span class="st">'bold'</span>)</span>
-<span id="cb11-417"><a href="#cb11-417" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">'Coefficient (log-odds)'</span>)</span>
-<span id="cb11-418"><a href="#cb11-418" aria-hidden="true" tabindex="-1"></a>plt.gca().invert_yaxis()</span>
-<span id="cb11-419"><a href="#cb11-419" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
-<span id="cb11-420"><a href="#cb11-420" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
-<span id="cb11-421"><a href="#cb11-421" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
-<span id="cb11-422"><a href="#cb11-422" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-423"><a href="#cb11-423" aria-hidden="true" tabindex="-1"></a>Red bars indicate variables that increase the likelihood of churn, while blue bars indicate variables that reduce it. <span class="in">`MonthlyCharges`</span> (<span class="in">`{python} f"{top_pos_feature['Coefficient']:+.2f}"`</span>) and <span class="in">`tenure`</span> (<span class="in">`{python} f"{top_neg_feature['Coefficient']:+.2f}"`</span>) remain the two strongest variables, nearly equal in size but pointing in opposite directions. Higher bills push customers toward leaving, while longer customer relationships pull them away from it.</span>
-<span id="cb11-424"><a href="#cb11-424" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-425"><a href="#cb11-425" aria-hidden="true" tabindex="-1"></a><span class="fu">## Conclusions</span></span>
+<span id="cb11-396"><a href="#cb11-396" aria-hidden="true" tabindex="-1"></a>The results are consistent across all five folds. The ROC-AUC averaged <span class="in">`{python} f"{cv_roc_mean:.4f}"`</span> with a standard deviation of <span class="in">`{python} f"{cv_roc_std:.3f}"`</span>, which indicates the model is stable and not overfitting to the training data.</span>
+<span id="cb11-397"><a href="#cb11-397" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-398"><a href="#cb11-398" aria-hidden="true" tabindex="-1"></a><span class="fu">### Feature Importance</span></span>
+<span id="cb11-399"><a href="#cb11-399" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-402"><a href="#cb11-402" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb11-403"><a href="#cb11-403" aria-hidden="true" tabindex="-1"></a><span class="co">#| label: feature-importance</span></span>
+<span id="cb11-404"><a href="#cb11-404" aria-hidden="true" tabindex="-1"></a><span class="co">#| fig-cap: "Top 15 Feature Coefficients - Interaction Model"</span></span>
+<span id="cb11-405"><a href="#cb11-405" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-406"><a href="#cb11-406" aria-hidden="true" tabindex="-1"></a>feature_names <span class="op">=</span> <span class="bu">list</span>(X_train_int.columns)</span>
+<span id="cb11-407"><a href="#cb11-407" aria-hidden="true" tabindex="-1"></a>coef_df <span class="op">=</span> pd.DataFrame({</span>
+<span id="cb11-408"><a href="#cb11-408" aria-hidden="true" tabindex="-1"></a>    <span class="st">'Feature'</span>: feature_names,</span>
+<span id="cb11-409"><a href="#cb11-409" aria-hidden="true" tabindex="-1"></a>    <span class="st">'Coefficient'</span>: lr_int.coef_[<span class="dv">0</span>]</span>
+<span id="cb11-410"><a href="#cb11-410" aria-hidden="true" tabindex="-1"></a>}).sort_values(<span class="st">'Coefficient'</span>, key<span class="op">=</span><span class="bu">abs</span>, ascending<span class="op">=</span><span class="va">False</span>).head(<span class="dv">15</span>)</span>
+<span id="cb11-411"><a href="#cb11-411" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-412"><a href="#cb11-412" aria-hidden="true" tabindex="-1"></a>top_pos_feature <span class="op">=</span> coef_df[coef_df[<span class="st">'Coefficient'</span>] <span class="op">&gt;</span> <span class="dv">0</span>].iloc[<span class="dv">0</span>]</span>
+<span id="cb11-413"><a href="#cb11-413" aria-hidden="true" tabindex="-1"></a>top_neg_feature <span class="op">=</span> coef_df[coef_df[<span class="st">'Coefficient'</span>] <span class="op">&lt;</span> <span class="dv">0</span>].iloc[<span class="dv">0</span>]</span>
+<span id="cb11-414"><a href="#cb11-414" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-415"><a href="#cb11-415" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">10</span>, <span class="dv">7</span>))</span>
+<span id="cb11-416"><a href="#cb11-416" aria-hidden="true" tabindex="-1"></a>colors <span class="op">=</span> [<span class="st">'tomato'</span> <span class="cf">if</span> c <span class="op">&gt;</span> <span class="dv">0</span> <span class="cf">else</span> <span class="st">'steelblue'</span> <span class="cf">for</span> c <span class="kw">in</span> coef_df[<span class="st">'Coefficient'</span>]]</span>
+<span id="cb11-417"><a href="#cb11-417" aria-hidden="true" tabindex="-1"></a>plt.barh(coef_df[<span class="st">'Feature'</span>], coef_df[<span class="st">'Coefficient'</span>], color<span class="op">=</span>colors)</span>
+<span id="cb11-418"><a href="#cb11-418" aria-hidden="true" tabindex="-1"></a>plt.axvline(<span class="dv">0</span>, color<span class="op">=</span><span class="st">'black'</span>, linewidth<span class="op">=</span><span class="fl">0.8</span>)</span>
+<span id="cb11-419"><a href="#cb11-419" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">'Top 15 Feature Coefficients - Interaction Model'</span>,</span>
+<span id="cb11-420"><a href="#cb11-420" aria-hidden="true" tabindex="-1"></a>          fontsize<span class="op">=</span><span class="dv">13</span>, fontweight<span class="op">=</span><span class="st">'bold'</span>)</span>
+<span id="cb11-421"><a href="#cb11-421" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">'Coefficient (log-odds)'</span>)</span>
+<span id="cb11-422"><a href="#cb11-422" aria-hidden="true" tabindex="-1"></a>plt.gca().invert_yaxis()</span>
+<span id="cb11-423"><a href="#cb11-423" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb11-424"><a href="#cb11-424" aria-hidden="true" tabindex="-1"></a>plt.show()</span>
+<span id="cb11-425"><a href="#cb11-425" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
 <span id="cb11-426"><a href="#cb11-426" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-427"><a href="#cb11-427" aria-hidden="true" tabindex="-1"></a>The logistic regression model shows that churn in this telecom dataset is quite predictable. At the default threshold, the interaction model achieves an ROC-AUC of <span class="in">`{python} f"{roc_auc_int:.4f}"`</span> and overall accuracy of <span class="in">`{python} f"{accuracy_int:.1%}"`</span>. By lowering the classification threshold to <span class="in">`0.30`</span>, the model meets the project's churn recall target of <span class="in">`75%`</span>. Cross-validation confirms these results hold across different subsets of the data, with a stable ROC-AUC of <span class="in">`{python} f"{cv_roc_mean:.4f}"`</span> across five folds.</span>
+<span id="cb11-427"><a href="#cb11-427" aria-hidden="true" tabindex="-1"></a>Red bars indicate variables that increase the likelihood of churn, while blue bars indicate variables that reduce it. <span class="in">`MonthlyCharges`</span> (<span class="in">`{python} f"{top_pos_feature['Coefficient']:+.2f}"`</span>) and <span class="in">`tenure`</span> (<span class="in">`{python} f"{top_neg_feature['Coefficient']:+.2f}"`</span>) remain the two strongest individual predictors. Among the interaction terms, two-year fiber optic customers show the highest churn risk of all contract-service combinations, which may reflect customers locked into long-term contracts who feel under-served by their internet service. In contrast, customers on long-term contracts with no internet service show the lowest churn, suggesting that simpler, phone-only plans attract a more stable customer base.</span>
 <span id="cb11-428"><a href="#cb11-428" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-429"><a href="#cb11-429" aria-hidden="true" tabindex="-1"></a>Three findings stand out. First, contract type is the clearest signal: month-to-month customers churn at <span class="in">`{python} f"{mtm_churn:.1%}"`</span>, compared to <span class="in">`{python} f"{two_yr_churn:.1%}"`</span> for customers on two-year contracts. Second, monthly charges consistently increase churn risk, which points to price sensitivity as a real factor. Third, tenure works in the opposite direction: customers who have been around longer are much less likely to leave. This means early retention efforts are especially valuable.</span>
+<span id="cb11-429"><a href="#cb11-429" aria-hidden="true" tabindex="-1"></a><span class="fu">## Conclusions</span></span>
 <span id="cb11-430"><a href="#cb11-430" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-431"><a href="#cb11-431" aria-hidden="true" tabindex="-1"></a><span class="fu">## Practical Implications</span></span>
+<span id="cb11-431"><a href="#cb11-431" aria-hidden="true" tabindex="-1"></a>The logistic regression model shows that churn in this telecom dataset is quite predictable. At the default threshold, the interaction model achieves an ROC-AUC of <span class="in">`{python} f"{roc_auc_int:.4f}"`</span> and overall accuracy of <span class="in">`{python} f"{accuracy_int:.1%}"`</span>. By lowering the classification threshold to <span class="in">`0.30`</span>, the model meets the project's churn recall target of <span class="in">`75%`</span>. Cross-validation confirms these results hold across different subsets of the data, with a stable ROC-AUC of <span class="in">`{python} f"{cv_roc_mean:.4f}"`</span> across five folds.</span>
 <span id="cb11-432"><a href="#cb11-432" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-433"><a href="#cb11-433" aria-hidden="true" tabindex="-1"></a>The model's output can feed directly into retention programs:</span>
+<span id="cb11-433"><a href="#cb11-433" aria-hidden="true" tabindex="-1"></a>Three findings stand out. First, contract type is the clearest signal: month-to-month customers churn at <span class="in">`{python} f"{mtm_churn:.1%}"`</span>, compared to <span class="in">`{python} f"{two_yr_churn:.1%}"`</span> for customers on two-year contracts. Second, monthly charges consistently increase churn risk, which points to price sensitivity as a real factor. Third, tenure works in the opposite direction: customers who have been around longer are much less likely to leave. This means early retention efforts are especially valuable.</span>
 <span id="cb11-434"><a href="#cb11-434" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-435"><a href="#cb11-435" aria-hidden="true" tabindex="-1"></a>**Contract upgrade offers:** Customers on month-to-month contracts with a predicted churn probability above <span class="in">`0.30`</span> are the highest-priority group for outreach. Offering a discounted upgrade to an annual contract could meaningfully reduce the <span class="in">`{python} f"{mtm_churn:.1%}"`</span> churn rate in this segment.</span>
+<span id="cb11-435"><a href="#cb11-435" aria-hidden="true" tabindex="-1"></a><span class="fu">## Practical Implications</span></span>
 <span id="cb11-436"><a href="#cb11-436" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-437"><a href="#cb11-437" aria-hidden="true" tabindex="-1"></a>**Pricing reviews:** Customers with high monthly bills are more likely to churn. Loyalty discounts or bundle offers targeted at high-charge customers in the top risk group could improve retention without broad price cuts.</span>
+<span id="cb11-437"><a href="#cb11-437" aria-hidden="true" tabindex="-1"></a>The model's output can feed directly into retention programs:</span>
 <span id="cb11-438"><a href="#cb11-438" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-439"><a href="#cb11-439" aria-hidden="true" tabindex="-1"></a>**Fiber optic service:** The <span class="in">`{python} f"{fiber_churn:.1%}"`</span> churn rate among fiber optic users is worth investigating separately. It may reflect service reliability issues, pricing relative to competition, or unmet expectations. A focused customer satisfaction review in this segment would help identify the root cause.</span>
+<span id="cb11-439"><a href="#cb11-439" aria-hidden="true" tabindex="-1"></a>**Contract upgrade offers:** Customers on month-to-month contracts with a predicted churn probability above <span class="in">`0.30`</span> are the highest-priority group for outreach. Offering a discounted upgrade to an annual contract could meaningfully reduce the <span class="in">`{python} f"{mtm_churn:.1%}"`</span> churn rate in this segment.</span>
 <span id="cb11-440"><a href="#cb11-440" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-441"><a href="#cb11-441" aria-hidden="true" tabindex="-1"></a>**Early customer engagement:** Since short tenure is one of the strongest signals of churn risk, putting more resources into the customer experience during the first year of service could improve long-term retention rates and increase the overall value of the customer base.</span>
+<span id="cb11-441"><a href="#cb11-441" aria-hidden="true" tabindex="-1"></a>**Pricing reviews:** Customers with high monthly bills are more likely to churn. Loyalty discounts or bundle offers targeted at high-charge customers in the top risk group could improve retention without broad price cuts.</span>
+<span id="cb11-442"><a href="#cb11-442" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-443"><a href="#cb11-443" aria-hidden="true" tabindex="-1"></a>**Fiber optic service:** The <span class="in">`{python} f"{fiber_churn:.1%}"`</span> churn rate among fiber optic users is worth investigating separately. It may reflect service reliability issues, pricing relative to competition, or unmet expectations. A focused customer satisfaction review in this segment would help identify the root cause.</span>
+<span id="cb11-444"><a href="#cb11-444" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-445"><a href="#cb11-445" aria-hidden="true" tabindex="-1"></a>**Early customer engagement:** Since short tenure is one of the strongest signals of churn risk, putting more resources into the customer experience during the first year of service could improve long-term retention rates and increase the overall value of the customer base.</span>
 </code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></div>
 </div></div></div></div></div>
 </div> <!-- /content -->
