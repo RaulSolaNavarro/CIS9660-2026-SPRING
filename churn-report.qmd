@@ -247,8 +247,9 @@ The training set contains `{python} f"{n_train:,}"` observations and the test se
 
 ### Logistic Regression Models
 
-We built two models. The **baseline model** uses all available features after preprocessing. The **interaction model** adds one extra variable: the product of the fiber optic indicator (`InternetService_Fiber optic`) and the month-to-month indicator (`Contract_One year`'s complement), which lets the model capture whether those two variables together have a stronger or weaker effect on churn than either one alone.
+We built two models. The **baseline model** uses all available features after pre-processing. The **interaction model** extends the baseline by adding four interaction terms that capture the combined effect of contract type and internet service on churn: one-year contract × fiber optic, two-year contract × fiber optic, one-year contract × no internet, and two-year contract × no internet. Since month-to-month and DSL are the reference categories, their effects are captured in the model intercept and serve as the baseline against which all other combinations are compared.
 
+Logistic regression was chosen because its output is easy to interpret. Each coefficient tells you the direction and size of a variable's effect on the odds of churning. Given the business goal, **churn recall was treated as the most important metric**, because missing a customer who is about to leave is more costly than incorrectly flagging one who would have stayed.
 Logistic regression was chosen because its output is easy to interpret. Each coefficient tells you the direction and size of a variable's effect on the odds of churning. Given the business goal, **churn recall was treated as the most important metric**, because missing a customer who is about to leave is more costly than incorrectly flagging one who would have stayed.
 
 ## Results
@@ -257,18 +258,21 @@ Logistic regression was chosen because its output is easy to interpret. Each coe
 
 ```{python}
 #| label: model-results
-#| fig-cap: "Confusion Matrix and ROC Curve - Interaction Model"
+#| fig-cap: "Confusion Matrix and ROC Curve — Interaction Model"
 
 X_train_int = X_train.copy()
 X_test_int  = X_test.copy()
 
-# Interaction term: Fiber optic × no long-term contract
-X_train_int['Fiber_x_MTM'] = (X_train['InternetService_Fiber optic'] *
-                               (1 - X_train.get('Contract_One year', 0) -
-                                    X_train.get('Contract_Two year', 0)))
-X_test_int['Fiber_x_MTM']  = (X_test['InternetService_Fiber optic'] *
-                               (1 - X_test.get('Contract_One year', 0) -
-                                    X_test.get('Contract_Two year', 0)))
+# Four interaction terms (Harrison)
+X_train_int['Contract1_x_FiberOptic'] = X_train['Contract_One year'] * X_train['InternetService_Fiber optic']
+X_train_int['Contract2_x_FiberOptic'] = X_train['Contract_Two year'] * X_train['InternetService_Fiber optic']
+X_train_int['Contract1_x_NoInternet'] = X_train['Contract_One year'] * X_train['InternetService_No']
+X_train_int['Contract2_x_NoInternet'] = X_train['Contract_Two year'] * X_train['InternetService_No']
+
+X_test_int['Contract1_x_FiberOptic'] = X_test['Contract_One year'] * X_test['InternetService_Fiber optic']
+X_test_int['Contract2_x_FiberOptic'] = X_test['Contract_Two year'] * X_test['InternetService_Fiber optic']
+X_test_int['Contract1_x_NoInternet'] = X_test['Contract_One year'] * X_test['InternetService_No']
+X_test_int['Contract2_x_NoInternet'] = X_test['Contract_Two year'] * X_test['InternetService_No']
 
 scaler_int = StandardScaler()
 X_train_int_scaled = scaler_int.fit_transform(X_train_int)
@@ -280,14 +284,14 @@ lr_int.fit(X_train_int_scaled, y_train)
 y_pred_int  = lr_int.predict(X_test_int_scaled)
 y_proba_int = lr_int.predict_proba(X_test_int_scaled)[:, 1]
 
-roc_auc_int       = roc_auc_score(y_test, y_proba_int)
-report_int        = classification_report(y_test, y_pred_int,
-                                          target_names=['No Churn','Churn'],
-                                          output_dict=True)
-accuracy_int      = report_int['accuracy']
-churn_recall_int  = report_int['Churn']['recall']
+roc_auc_int         = roc_auc_score(y_test, y_proba_int)
+report_int          = classification_report(y_test, y_pred_int,
+                                            target_names=['No Churn','Churn'],
+                                            output_dict=True)
+accuracy_int        = report_int['accuracy']
+churn_recall_int    = report_int['Churn']['recall']
 churn_precision_int = report_int['Churn']['precision']
-churn_f1_int      = report_int['Churn']['f1-score']
+churn_f1_int        = report_int['Churn']['f1-score']
 
 print("=== Interaction Model Performance ===")
 print(f"ROC-AUC: {roc_auc_int:.4f}")
@@ -402,7 +406,7 @@ plt.tight_layout()
 plt.show()
 ```
 
-Red bars indicate variables that increase the likelihood of churn, while blue bars indicate variables that reduce it. `MonthlyCharges` (`{python} f"{top_pos_feature['Coefficient']:+.2f}"`) and `tenure` (`{python} f"{top_neg_feature['Coefficient']:+.2f}"`) remain the two strongest variables, nearly equal in size but pointing in opposite directions. Higher bills push customers toward leaving, while longer customer relationships pull them away from it.
+Red bars indicate variables that increase the likelihood of churn, while blue bars indicate variables that reduce it. `MonthlyCharges` (`{python} f"{top_pos_feature['Coefficient']:+.2f}"`) and `tenure` (`{python} f"{top_neg_feature['Coefficient']:+.2f}"`) remain the two strongest individual predictors. Among the interaction terms, two-year fiber optic customers show the highest churn risk of all contract-service combinations, which may reflect customers locked into long-term contracts who feel under-served by their internet service. In contrast, customers on long-term contracts with no internet service show the lowest churn, suggesting that simpler, phone-only plans attract a more stable customer base.
 
 ## Conclusions
 
