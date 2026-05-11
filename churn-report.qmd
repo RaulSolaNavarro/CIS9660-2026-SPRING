@@ -24,15 +24,36 @@ execute:
 
 ## Introduction
 
-Customer churn refers to customers who cancel or stop using a company's service. In the telecom industry, losing customers is expensive because bringing in new ones costs significantly more than keeping existing ones. Being able to identify which customers are likely to leave before they actually do gives companies a chance to step in with a targeted offer or intervention.
+Customer churn refers to customers who cancel or stop using a company's service. ^[In this 
+dataset, churn is measured as a binary snapshot: each customer is labeled as churned or 
+retained based on whether they left within the last month of the observation window. It does 
+not capture how long a customer was at risk or when exactly they left, so churn rate here 
+means the proportion of customers in the sample who churned during that period 
+(26.6% of 7,032 customers).] In the telecom industry, losing customers is expensive because 
+bringing in new ones costs significantly more than keeping existing ones. ^[Gallo, A. (2014). 
+The value of keeping the right customers. *Harvard Business Review*. 
+https://hbr.org/2014/10/the-value-of-keeping-the-right-customers. Gallo synthesizes research 
+by Frederick Reichheld of Bain & Company showing that acquiring a new customer costs 5 to 25 
+times more than retaining an existing one, and that a 5% increase in retention rates can 
+boost profits by 25% to 95%.] Being able to identify which customers are likely to leave 
+before they actually do gives companies a chance to step in with a targeted offer or 
+intervention.
 
-This project uses the Kaggle Telco Customer Churn dataset to answer the following question: **Can we predict whether a telecom customer will churn based on their contract type, monthly charges, and service usage?** We build and compare logistic regression models, evaluate their performance using standard classification metrics, and translate the results into business recommendations.
+This project uses the *Kaggle Telco Customer Churn* dataset ^[An IBM sample dataset of a 
+fictional telecommunications company.] to answer the following question: **Can we predict whether a telecom customer will churn based on their contract type, monthly charges, and service usage?** We build and compare `logistic regression models`, evaluate their performance using `standard classification metrics`, and translate the results into `business recommendations`.
 
-The analysis has two goals. The first is **predictive**: build a model that correctly classifies customers as likely to churn or stay. The second is **inferential**: test whether the combination of `InternetService` type and `Contract` type has a meaningful effect on churn beyond what each variable contributes on its own.
+The analysis has two goals. The first is **predictive**: build a model that correctly classifies customers as likely to churn or stay. The second is **inferential**: test whether the combination of `InternetService` type and `Contract` type has a meaningful effect on churn beyond what each variable contributes on its own and, specifically, whether certain contract-service pairings carry risk that neither variable alone can fully explain.
 
 ## Dataset Description
 
-The dataset comes from [Kaggle's Telco Customer Churn collection](https://www.kaggle.com/datasets/blastchar/telco-customer-churn) and covers `7,043` customers of a fictional telecommunications company. It includes `21` variables across demographics, subscribed services, and account details, with `Churn` (Yes/No) as the target variable.
+The dataset comes from [Kaggle's Telco Customer Churn](https://www.kaggle.com/datasets/blastchar/telco-customer-churn) and covers `7,043` customers of a fictional telecommunications company. It includes `21` variables ^[The raw dataset contains 21 columns. `customerID` is dropped immediately 
+as a non-predictive identifier. The 13 binary Yes/No columns are encoded in place with 
+`.map()` and do not change the column count. One-hot encoding with `drop_first=True` 
+then expands three categorical columns: `InternetService` (3 levels → 2 dummies), 
+`Contract` (3 levels → 2 dummies), and `PaymentMethod` (4 levels → 3 dummies), adding 
+a net of 4 columns. This gives 24 columns total. `TotalCharges` is then excluded from 
+the model due to its near-perfect collinearity with `tenure` (r = 0.83), leaving 
+**23 features** used in modeling.] across demographics, subscribed services, and account details, with `Churn` (Yes/No) as the target variable.
 
 The predictor variables fall into three groups:
 
@@ -203,7 +224,7 @@ plt.tight_layout()
 plt.show()
 ```
 
-A few clear patterns stand out. Contract type is the variable most strongly tied to churn: customers on month-to-month contracts churned at a rate of `{python} f"{mtm_churn:.1%}"`, while customers on two-year contracts churned at just `{python} f"{two_yr_churn:.1%}"`. Fiber optic internet users also showed a high churn rate of `{python} f"{fiber_churn:.1%}"`, which may point to service quality or pricing issues in that segment. Customers who churned tended to have higher monthly bills (median around `{python} f"${median_charges_churn:.0f}"` vs. `{python} f"${median_charges_no_churn:.0f}"` for those who stayed) and had been with the company for less time (median tenure of about `{python} f"{median_tenure_churn:.0f}"` months vs. `{python} f"{median_tenure_no_churn:.0f}"` months for loyal customers).
+A few patterns stand out. Contract type is the variable most strongly tied to churn: customers on month-to-month contracts churned at a rate of `{python} f"{mtm_churn:.1%}"`, while customers on two-year contracts churned at just `{python} f"{two_yr_churn:.1%}"`. Fiber optic internet users also showed a high churn rate of `{python} f"{fiber_churn:.1%}"`, which may point to service quality or pricing issues in that segment. Customers who churned tended to have higher monthly bills (median around `{python} f"${median_charges_churn:.0f}"` vs. `{python} f"${median_charges_no_churn:.0f}"` for those who stayed) and had been with the company for less time (median tenure of about `{python} f"{median_tenure_churn:.0f}"` months vs. `{python} f"{median_tenure_no_churn:.0f}"` months for loyal customers).
 
 ```{python}
 #| label: correlation-heatmap
@@ -218,7 +239,7 @@ plt.tight_layout()
 plt.show()
 ```
 
-Among the numeric variables, `tenure` has the strongest relationship with churn (correlation of `{python} f"{tenure_churn_corr:.2f}"`), meaning longer-tenured customers are less likely to leave. `MonthlyCharges` has a weaker but positive relationship (`{python} f"{monthly_churn_corr:.2f}"`), meaning higher bills are associated with slightly higher churn. `TotalCharges` is largely redundant with `tenure` (correlation of `{python} f"{total_charges_tenure_corr:.2f}"`), which is why it was excluded from the models.
+The **correlation heatmap** ^[Reading the heatmap: Each cell shows the Pearson correlation coefficient $r$ between the row variable and the column variable, ranging from -1 to 1. Red cells indicate a positive relationship (both variables tend to move together); blue cells indicate a negative relationship (one rises as the other falls);  white or near-zero cells indicate little linear association. The matrix is symmetric, meaning that the cell at row $i$, column $j$ is identical to row $j$, column $i$, so only one rectangle carries new information. Diagonal cells are always 1.00 (a variable is perfectly correlated with itself). To read churn predictors specifically, scan the `Churn` row or column: red values flag features positively associated with churn, blue values flag features negatively associated with churn.] shows the pairwise **Pearson correlation coefficient** ^[The Pearson coefficient only captures *linear* relationships between two variables. Two variables can have a strong curved or non-monotonic relationship and still produce an $r$ near zero, meaning the heatmap may understate some associations. For this analysis the limitation is acceptable: logistic regression models the log-odds of churn as a linear function of the predictors, so linear correlation is the appropriate screening tool.] between every pair of variables after preprocessing. Among the numeric variables, `tenure` has the strongest relationship with churn (correlation of `{python} f"{tenure_churn_corr:.2f}"`), meaning longer-tenured customers are less likely to leave. `MonthlyCharges` has a weaker but positive relationship (`{python} f"{monthly_churn_corr:.2f}"`), meaning higher bills are associated with slightly higher churn. `TotalCharges` is largely redundant with `tenure` (correlation of `{python} f"{total_charges_tenure_corr:.2f}"`), which is why it was excluded from the models.
 
 ## Methodology
 
@@ -243,7 +264,13 @@ print(f"Test set:     {n_test} observations")
 print(f"Churn rate - Train: {y_train.mean():.3f} | Test: {y_test.mean():.3f}")
 ```
 
-The training set contains `{python} f"{n_train:,}"` observations and the test set contains `{python} f"{n_test:,}"`, with a churn rate of `{python} f"{y_train.mean():.1%}"` in both sets confirming the stratified split worked correctly. After one-hot encoding, the feature space expanded from `21` raw variables to `{python} f"{n_features_model}"` features used in the model.
+The training set contains `{python} f"{n_train:,}"` observations and the test set contains `{python} f"{n_test:,}"`, with a churn rate of `{python} f"{y_train.mean():.1%}"` in both sets confirming the *stratified split* ^[Stratified splitting preserves the proportion of the 
+target class in each subset. Without it, a purely random split could by chance assign 
+disproportionately few churners to the test set, making recall and precision estimates 
+unreliable. With `stratify=y`, scikit-learn splits churners and non-churners separately, 
+takes 80% of each group, and combines them — guaranteeing that both sets mirror the 
+original 26.6% churn rate. This is especially important here given the class imbalance 
+(73.4% no churn vs. 26.6% churn).] worked correctly. After one-hot encoding, the feature space expanded from `21` raw variables to `{python} f"{n_features_model}"` features used in the model.
 
 ### Logistic Regression Models
 
@@ -377,7 +404,9 @@ cv_df['Std Dev'] = cv_df['Std Dev'].map('{:.4f}'.format)
 cv_df.style.hide(axis='index')
 ```
 
-The results are consistent across all five folds. The ROC-AUC averaged `{python} f"{cv_roc_mean:.4f}"` with a standard deviation of `{python} f"{cv_roc_std:.3f}"`, which indicates the model is stable and not overfitting to the training data.
+The results are consistent across all five folds. The ROC-AUC averaged `{python} f"{cv_roc_mean:.4f}"` with a standard deviation of `{python} f"{cv_roc_std:.3f}"`,
+meaning that scores ranged roughly between 0.84 and 0.85 across folds, and indicating that
+the model is stable and not *overfitting* to the training data. A model that had simply memorized the training data would score well on training data but deteriorate on held-out chunks; the stability here indicates that is not happening. The cross-validation recall of 53.5% reflects the default threshold of 0.50 and is consistent with the threshold tuning results, at 0.30, recall rises to 79% as shown in the previous section.
 
 ### Feature Importance
 
