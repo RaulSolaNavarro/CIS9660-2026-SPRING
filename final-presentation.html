@@ -6,17 +6,20 @@
 <script src="site_libs/quarto-html/tippy.umd.min.js"></script>
 <link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
 <link href="site_libs/quarto-html/light-border.css" rel="stylesheet">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-8b4baf804e461d9b72633f0de59a0cac.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
-  <meta name="generator" content="quarto-1.8.27">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-acf12a64177840b8d86f2d4f01b2e9fb.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
+  <meta name="generator" content="quarto-1.9.37">
 
   <meta name="dcterms.date" content="2026-05-11">
-  <title>CIS 9660 — Group 2 Project – Customer Churn Prediction Analysis</title>
+  <title>CIS 9660 - Group 2 Project – Customer Churn Prediction Analysis</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
   <link rel="stylesheet" href="site_libs/revealjs/dist/reset.css">
   <link rel="stylesheet" href="site_libs/revealjs/dist/reveal.css">
   <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
     code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
     div.columns{display: flex; gap: min(4vw, 1.5em);}
@@ -29,7 +32,7 @@
       vertical-align: middle;
     }
   </style>
-  <link rel="stylesheet" href="site_libs/revealjs/dist/theme/quarto-fa72838ef4465772dca060c9a12fdb75.css">
+  <link rel="stylesheet" href="site_libs/revealjs/dist/theme/quarto-a937a97bfd15928a315ed44a3ddaf97c.css">
   <link href="site_libs/revealjs/plugin/quarto-line-highlight/line-highlight.css" rel="stylesheet">
   <link href="site_libs/revealjs/plugin/reveal-menu/menu.css" rel="stylesheet">
   <link href="site_libs/revealjs/plugin/reveal-menu/quarto-menu.css" rel="stylesheet">
@@ -385,25 +388,25 @@
 <tr class="odd">
 <td>ROC-AUC</td>
 <td>0.8289</td>
-<td>0.8289</td>
+<td>0.8341</td>
 <td>≥ 0.80 ✅</td>
 </tr>
 <tr class="even">
 <td>Accuracy</td>
 <td>79.8%</td>
-<td>79.8%</td>
-<td>≥ 80% ⚠️</td>
+<td>80.1%</td>
+<td>≥ 80% ✅</td>
 </tr>
 <tr class="odd">
 <td>Churn Recall</td>
 <td>56.4%</td>
-<td>55.6%</td>
+<td>56.4%</td>
 <td>≥ 75% ❌</td>
 </tr>
 <tr class="even">
 <td>Churn Precision</td>
 <td>63.6%</td>
-<td>63.6%</td>
+<td>64.0%</td>
 <td>—</td>
 </tr>
 </tbody>
@@ -430,27 +433,27 @@
 <tbody>
 <tr class="odd">
 <td>0.50</td>
-<td>79.8%</td>
+<td>80.1%</td>
 <td>56.4%</td>
-<td>63.6%</td>
+<td>64.0%</td>
 </tr>
 <tr class="even">
 <td>0.40</td>
-<td>78.2%</td>
-<td>67.4%</td>
-<td>57.7%</td>
+<td>78.3%</td>
+<td>67.1%</td>
+<td>57.8%</td>
 </tr>
 <tr class="odd">
 <td><strong>0.30</strong></td>
 <td><strong>74.5%</strong></td>
-<td><strong>79.0%</strong></td>
-<td><strong>51.1%</strong></td>
+<td><strong>75.1%</strong></td>
+<td><strong>51.4%</strong></td>
 </tr>
 </tbody>
 </table>
 </div><div class="column" style="width:45%;">
 <h3 id="why-0.30">Why 0.30?</h3>
-<p>At threshold = 0.30 the model catches <strong>~79% of actual churners</strong> ✅</p>
+<p>At threshold = 0.30 the model catches <strong>~75% of actual churners</strong> ✅</p>
 <p><strong>The trade-off is acceptable:</strong> Missing a churner = losing a customer</p>
 <p>Flagging a loyal customer = small cost of a discount offer</p>
 </div></div>
@@ -491,16 +494,16 @@
 </thead>
 <tbody>
 <tr class="odd">
-<td>MonthlyCharges</td>
-<td>+0.89</td>
+<td>InternetService_fiber_optic</td>
+<td>+1.33</td>
 </tr>
 <tr class="even">
-<td>InternetService_fiber_optic</td>
-<td>+1.07</td>
+<td>MonthlyCharges</td>
+<td>+0.72</td>
 </tr>
 <tr class="odd">
-<td>TotalCharges</td>
-<td>+0.67</td>
+<td>StreamingTV</td>
+<td>+0.49</td>
 </tr>
 <tr class="even">
 <td>PaymentMethod_electronic_check</td>
@@ -520,19 +523,19 @@
 <tbody>
 <tr class="odd">
 <td>tenure</td>
-<td>-1.40</td>
+<td>-0.82</td>
 </tr>
 <tr class="even">
 <td>Contract_two_year</td>
-<td>-1.54</td>
-</tr>
-<tr class="odd">
-<td>Contract_one_year</td>
 <td>-0.69</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>InternetService_no</td>
-<td>-0.87</td>
+<td>-1.02</td>
+</tr>
+<tr class="even">
+<td>Contract_one_year</td>
+<td>-0.29</td>
 </tr>
 </tbody>
 </table>
@@ -562,15 +565,41 @@
 <h3 id="what-we-found">What We Found</h3>
 <ul>
 <li>ROC-AUC of <strong>0.83</strong>: the model discriminates well between churners and non-churners</li>
-<li>At threshold 0.30, churn recall reaches <strong>~79%</strong>, meeting the project target</li>
-<li><strong>tenure</strong> and <strong>MonthlyCharges</strong> are the two dominant predictors</li>
-<li>Contract type is the strongest categorical signal: the two-year customers churn at just <strong>2.8%</strong> vs <strong>42.7%</strong> for month-to-month</li>
+<li>At threshold 0.30, churn recall reaches <strong>~75%</strong>, meeting the project target</li>
+<li><strong>tenure</strong> and <strong>InternetService_fiber_optic</strong> are the two strongest individual predictors</li>
+<li>Contract type is the strongest categorical signal: two-year customers churn at just <strong>2.8%</strong> vs <strong>42.7%</strong> for month-to-month</li>
 </ul>
 </div><div class="column" style="width:45%;">
 <h3 id="whats-new-from-interactions">What’s New from Interactions</h3>
 <p>The four-term interaction model revealed that it’s not simply fiber optic that drives churn, but rather the <strong>long-term contract holders on fiber optic</strong> who are most at risk, suggesting dissatisfaction with a service they feel locked into</p>
 <h3 id="full-report">Full Report</h3>
 <p>🔗 <a href="https://RaulSolaNavarro.github.io/CIS9660-2026-SPRING/churn-report.html">View on GitHub Pages</a></p>
+</div></div>
+</section>
+<section id="post-presentation-additions" class="slide level2" data-background-color="#1F3864">
+<h2>Post-Presentation Additions</h2>
+<h3 id="enhancements-added-to-the-final-report-after-today">Enhancements added to the final report after today</h3>
+<p><br></p>
+<div class="columns">
+<div class="column" style="width:50%;">
+<h3 id="statistical-testing">📊 Statistical Testing</h3>
+<ul>
+<li><strong>Likelihood Ratio Test</strong>: formally confirmed the interaction terms jointly improve model fit over the baseline (χ² = 12.65, p = 0.013)</li>
+<li><strong>Individual p-values</strong> via <code>statsmodels</code>: identified which specific interaction terms are statistically significant</li>
+</ul>
+<h3 id="model-comparison">🌲 Model Comparison</h3>
+<ul>
+<li><strong>Random Forest</strong> trained on the same feature set as a benchmark</li>
+<li><strong>McNemar’s test</strong> confirmed the performance gap between models is not statistically significant (p = 0.107)</li>
+</ul>
+</div><div class="column" style="width:50%;">
+<h3 id="new-visualizations">📈 New Visualizations</h3>
+<ul>
+<li>Coefficient chart with significance stars (<code>*</code> p&lt;0.05, <code>**</code> p&lt;0.01, <code>***</code> p&lt;0.001)</li>
+<li>Side-by-side feature importance comparison: Random Forest vs.&nbsp;Logistic Regression</li>
+</ul>
+<h3 id="key-takeaway">🔑 Key Takeaway</h3>
+<p>Both models agree on the same top predictors (<code>tenure</code>, <code>contract type</code>, and <code>fiber optic service</code>) strengthening confidence that these reflect genuine patterns and supporting the choice of the simpler, more interpretable logistic regression</p>
 </div></div>
 </section>
 <section id="thank-you" class="slide level2" data-background-color="#1F3864">
