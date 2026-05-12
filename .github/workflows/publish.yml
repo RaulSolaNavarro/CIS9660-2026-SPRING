@@ -21,7 +21,7 @@ jobs:
 
       - name: Install Python dependencies
         run: |
-          pip install pandas numpy matplotlib seaborn scikit-learn scipy statsmodels
+          pip install jupyter pyyaml pandas numpy matplotlib seaborn scikit-learn scipy statsmodels
 
       - name: Set up Quarto
         uses: quarto-dev/quarto-actions/setup@v2
@@ -33,3 +33,4 @@ jobs:
           render: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          QUARTO_PYTHON: python3
