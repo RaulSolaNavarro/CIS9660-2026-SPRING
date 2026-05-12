@@ -203,10 +203,10 @@ Month-to-month × DSL serve as the **reference baseline**
 
 | Metric | Baseline | Interaction | Target |
 |--------|----------|-------------|--------|
-| ROC-AUC | 0.8289 | 0.8289 | ≥ 0.80 ✅ |
-| Accuracy | 79.8% | 79.8% | ≥ 80% ⚠️ |
-| Churn Recall | 56.4% | 55.6% | ≥ 75% ❌ |
-| Churn Precision | 63.6% | 63.6% | — |
+| ROC-AUC | 0.8289 | 0.8341 | ≥ 0.80 ✅ |
+| Accuracy | 79.8% | 80.1% | ≥ 80% ✅ |
+| Churn Recall | 56.4% | 56.4% | ≥ 75% ❌ |
+| Churn Precision | 63.6% | 64.0% | — |
 
 <br>
 
@@ -222,13 +222,13 @@ Month-to-month × DSL serve as the **reference baseline**
 ::: {.column width="55%"}
 | Threshold | Accuracy | Churn Recall | Precision |
 |-----------|----------|-------------|-----------|
-| 0.50 | 79.8% | 56.4% | 63.6% |
-| 0.40 | 78.2% | 67.4% | 57.7% |
-| **0.30** | **74.5%** | **79.0%** | **51.1%** |
+| 0.50 | 80.1% | 56.4% | 64.0% |
+| 0.40 | 78.3% | 67.1% | 57.8% |
+| **0.30** | **74.5%** | **75.1%** | **51.4%** |
 :::
 ::: {.column width="45%"}
 ### Why 0.30?
-At threshold = 0.30 the model catches **~79% of actual churners** ✅
+At threshold = 0.30 the model catches **~75% of actual churners** ✅
 
 **The trade-off is acceptable:**
 Missing a churner = losing a customer
@@ -273,19 +273,19 @@ It's not just fiber optic that drives churn, it's fiber optic customers **who ar
 ### 📈 Increases Churn
 | Feature | Coefficient |
 |---------|------------|
-| MonthlyCharges | +0.89 |
-| InternetService_fiber_optic | +1.07 |
-| TotalCharges | +0.67 |
+| InternetService_fiber_optic | +1.33 |
+| MonthlyCharges | +0.72 |
+| StreamingTV | +0.49 |
 | PaymentMethod_electronic_check | +0.41 |
 :::
 ::: {.column width="50%"}
 ### 📉 Reduces Churn
 | Feature | Coefficient |
 |---------|------------|
-| tenure | -1.40 |
-| Contract_two_year | -1.54 |
-| Contract_one_year | -0.69 |
-| InternetService_no | -0.87 |
+| tenure | -0.82 |
+| Contract_two_year | -0.69 |
+| InternetService_no | -1.02 |
+| Contract_one_year | -0.29 |
 :::
 :::
 
@@ -322,9 +322,9 @@ Invest in onboarding and early retention programs!
 ::: {.column width="55%"}
 ### What We Found
 - ROC-AUC of **0.83**: the model discriminates well between churners and non-churners
-- At threshold 0.30, churn recall reaches **~79%**, meeting the project target
-- **tenure** and **MonthlyCharges** are the two dominant predictors
-- Contract type is the strongest categorical signal: the two-year customers churn at just **2.8%** vs **42.7%** for month-to-month
+- At threshold 0.30, churn recall reaches **~75%**, meeting the project target
+- **tenure** and **InternetService_fiber_optic** are the two strongest individual predictors
+- Contract type is the strongest categorical signal: two-year customers churn at just **2.8%** vs **42.7%** for month-to-month
 :::
 ::: {.column width="45%"}
 ### What's New from Interactions
@@ -332,6 +332,34 @@ The four-term interaction model revealed that it's not simply fiber optic that d
 
 ### Full Report
 🔗 [View on GitHub Pages](https://RaulSolaNavarro.github.io/CIS9660-2026-SPRING/churn-report.html)
+:::
+:::
+
+---
+
+## Post-Presentation Additions {background-color="#1F3864"}
+
+### Enhancements added to the final report after today
+
+<br>
+
+::: {.columns}
+::: {.column width="50%"}
+### 📊 Statistical Testing
+- **Likelihood Ratio Test**: formally confirmed the interaction terms jointly improve model fit over the baseline (χ² = 12.65, p = 0.013)
+- **Individual p-values** via `statsmodels`: identified which specific interaction terms are statistically significant
+
+### 🌲 Model Comparison
+- **Random Forest** trained on the same feature set as a benchmark
+- **McNemar's test** confirmed the performance gap between models is not statistically significant (p = 0.107)
+:::
+::: {.column width="50%"}
+### 📈 New Visualizations
+- Coefficient chart with significance stars (`*` p<0.05, `**` p<0.01, `***` p<0.001)
+- Side-by-side feature importance comparison: Random Forest vs. Logistic Regression
+
+### 🔑 Key Takeaway
+Both models agree on the same top predictors (`tenure`, `contract type`, and `fiber optic service`) strengthening confidence that these reflect genuine patterns and supporting the choice of the simpler, more interpretable logistic regression
 :::
 :::
 
