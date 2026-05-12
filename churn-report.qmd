@@ -149,11 +149,10 @@ median_tenure_no_churn  = df_raw[df_raw['Churn']=='No']['tenure'].median()
 tenure_churn_corr  = df['tenure'].corr(df['Churn'])
 monthly_churn_corr = df['MonthlyCharges'].corr(df['Churn'])
 
-# Pre-compute feature count for inline use
-_df_temp = df.drop(columns=['Churn', 'TotalCharges'])
-n_features_model = _df_temp.shape[1] + 1  # +1 for the interaction term added later
-del _df_temp
-
+# Pre-compute feature count: 23 base features (after dropping TotalCharges),
+# expanded to 27 in the interaction model (+4 interaction terms)
+n_features_base = df.drop(columns=['Churn', 'TotalCharges']).shape[1]  # 23
+n_features_model = n_features_base + 4  # 27 with interaction terms
 ```
 
 During data cleaning, `{python} f"{n_dropped}"` rows were dropped because `TotalCharges` was blank for customers with zero tenure (brand new accounts with no billing history yet), leaving a working dataset of `{python} f"{n_obs:,}"` observations. `TotalCharges` was also removed from the model because it is almost entirely determined by `tenure` (correlation of `{python} f"{total_charges_tenure_corr:.2f}"`), which would distort the model's coefficient estimates. The `Churn` column was converted to a binary integer (`1` = churned, `0` = stayed).
@@ -268,15 +267,14 @@ The training set contains `{python} f"{n_train:,}"` observations and the test se
 target class in each subset. Without it, a purely random split could by chance assign 
 disproportionately few churners to the test set, making recall and precision estimates 
 unreliable. With `stratify=y`, scikit-learn splits churners and non-churners separately, 
-takes 80% of each group, and combines them — guaranteeing that both sets mirror the 
+takes 80% of each group, and combines them, guaranteeing that both sets mirror the 
 original 26.6% churn rate. This is especially important here given the class imbalance 
-(73.4% no churn vs. 26.6% churn).] worked correctly. After one-hot encoding, the feature space expanded from `21` raw variables to `{python} f"{n_features_model}"` features used in the model.
+(73.4% no churn vs. 26.6% churn).] worked correctly. After one-hot encoding, the feature space expanded from `{python} f"{n_features_base}"` base features to `{python} f"{n_features_model}"` features in the interaction model (which adds four contract × internet service terms).
 
 ### Logistic Regression Models
 
 We built two models. The **baseline model** uses all available features after pre-processing. The **interaction model** extends the baseline by adding four interaction terms that capture the combined effect of contract type and internet service on churn: one-year contract × fiber optic, two-year contract × fiber optic, one-year contract × no internet, and two-year contract × no internet. Since month-to-month and DSL are the reference categories, their effects are captured in the model intercept and serve as the baseline against which all other combinations are compared.
 
-Logistic regression was chosen because its output is easy to interpret. Each coefficient tells you the direction and size of a variable's effect on the odds of churning. Given the business goal, **churn recall was treated as the most important metric**, because missing a customer who is about to leave is more costly than incorrectly flagging one who would have stayed.
 Logistic regression was chosen because its output is easy to interpret. Each coefficient tells you the direction and size of a variable's effect on the odds of churning. Given the business goal, **churn recall was treated as the most important metric**, because missing a customer who is about to leave is more costly than incorrectly flagging one who would have stayed.
 
 ## Results
@@ -285,7 +283,7 @@ Logistic regression was chosen because its output is easy to interpret. Each coe
 
 ```{python}
 #| label: model-results
-#| fig-cap: "Confusion Matrix and ROC Curve — Interaction Model"
+#| fig-cap: "Confusion Matrix and ROC Curve - Interaction Model"
 
 X_train_int = X_train.copy()
 X_test_int  = X_test.copy()
@@ -338,7 +336,106 @@ plt.tight_layout()
 plt.show()
 ```
 
-The interaction model achieved an ROC-AUC of `{python} f"{roc_auc_int:.4f}"`, exceeding the target of `0.80`. Overall accuracy was `{python} f"{accuracy_int:.1%}"`, just under the `80%` target. Churn recall at the default threshold of `0.50` was `{python} f"{churn_recall_int:.1%}"`, which falls short of the `75%` target. The threshold tuning section below addresses this directly.
+The interaction model achieved an ROC-AUC of `{python} f"{roc_auc_int:.4f}"`, exceeding the target of `0.80`. Overall accuracy was `{python} f"{accuracy_int:.1%}"`, just under the `80%` target. Churn recall at the default threshold of `0.50` was `{python} f"{churn_recall_int:.1%}"`, which falls short of the `75%` target. The weighted average recall of 80% seen in the classification report is misleading here: it is pulled upward by how well the model predicts the much larger non-churn class, which has nearly three times as many customers. The churn-specific recall is the honest metric for this business goal, and the threshold tuning section below addresses it directly.
+
+```{python}
+#| label: likelihood-ratio-test
+
+from scipy import stats
+import statsmodels.api as sm
+
+# Prepare features - baseline (no interaction terms)
+scaler_base = StandardScaler()
+X_train_base_scaled = scaler_base.fit_transform(X_train)
+X_test_base_scaled  = scaler_base.transform(X_test)
+
+# Add constant for statsmodels (intercept)
+X_train_base_sm = sm.add_constant(X_train_base_scaled)
+X_train_int_sm  = sm.add_constant(X_train_int_scaled)
+
+# Fit both models with statsmodels
+baseline_sm    = sm.Logit(y_train, X_train_base_sm).fit(disp=0)
+interaction_sm = sm.Logit(y_train, X_train_int_sm).fit(disp=0)
+
+# Likelihood Ratio Test
+lr_stat = -2 * (baseline_sm.llf - interaction_sm.llf)
+df_diff = interaction_sm.df_model - baseline_sm.df_model
+p_value = stats.chi2.sf(lr_stat, df_diff)
+
+print("=== Likelihood Ratio Test ===")
+print(f"Baseline log-likelihood:    {baseline_sm.llf:.4f}")
+print(f"Interaction log-likelihood: {interaction_sm.llf:.4f}")
+print(f"LR statistic:               {lr_stat:.4f}")
+print(f"Degrees of freedom:         {int(df_diff)}")
+print(f"p-value:                    {p_value:.4f}")
+
+# Individual coefficient p-values from interaction model
+coef_pval_df = pd.DataFrame({
+    'Feature':      X_train_int.columns,
+    'Coefficient':  interaction_sm.params[1:],
+    'p_value':      interaction_sm.pvalues[1:]
+}).sort_values('Coefficient', key=abs, ascending=False).head(15)
+
+lrt_pvalue   = p_value
+lrt_stat     = lr_stat
+lrt_df       = int(df_diff)
+```
+
+```{python}
+#| label: lrt-viz
+#| fig-cap: "Interaction Model Coefficients with Significance Levels"
+
+def sig_label(p):
+    if p < 0.001:  return '***'
+    elif p < 0.01: return '**'
+    elif p < 0.05: return '*'
+    else:          return ''
+
+coef_pval_df['sig'] = coef_pval_df['p_value'].apply(sig_label)
+
+fig, ax = plt.subplots(figsize=(10, 7))
+colors = ['tomato' if c > 0 else 'steelblue' for c in coef_pval_df['Coefficient']]
+bars = ax.barh(coef_pval_df['Feature'], coef_pval_df['Coefficient'], color=colors)
+ax.axvline(0, color='black', linewidth=0.8)
+
+for bar, (_, row) in zip(bars, coef_pval_df.iterrows()):
+    x = bar.get_width()
+    offset = 0.03 if x >= 0 else -0.03
+    ha = 'left' if x >= 0 else 'right'
+    ax.text(x + offset, bar.get_y() + bar.get_height() / 2,
+            row['sig'], va='center', ha=ha, fontsize=12, fontweight='bold',
+            color='black')
+
+ax.set_title(
+    'Top 15 Coefficients - Interaction Model\n(* p<0.05  ** p<0.01  *** p<0.001)',
+    fontsize=12, fontweight='bold')
+ax.set_xlabel('Coefficient (log-odds)')
+ax.invert_yaxis()
+plt.tight_layout()
+plt.show()
+```
+
+### Likelihood Ratio Test: Baseline vs. Interaction Model
+
+The interaction model adds four terms to the baseline. To test whether this added 
+complexity is statistically justified, rather than just a chance improvement on the 
+training data, we use the **Likelihood Ratio Test (LRT)**. The LRT compares how well 
+each model fits the data by looking at their log-likelihoods: a model that fits better 
+will assign higher probability to the outcomes it actually observed. ^[The Likelihood 
+Ratio Test statistic is calculated as $-2(\ell_0 - \ell_1)$, where $\ell_0$ is the 
+log-likelihood of the baseline model and $\ell_1$ is the log-likelihood of the 
+interaction model. Under the null hypothesis that the interaction terms have no effect, 
+this statistic follows a chi-squared distribution with degrees of freedom equal to the 
+number of added terms. In this case, 4. A p-value below 0.05 indicates the interaction 
+model fits the data significantly better than the baseline.]
+
+The null hypothesis is that the four interaction terms contribute nothing (the 
+baseline model fits the data just as well). A p-value below 0.05 means we can reject 
+that and conclude the interactions carry real signal. The chart above shows the top 15 
+coefficients from the interaction model, with significance stars indicating which 
+individual terms are statistically distinguishable from zero.
+
+The LRT yielded a chi-squared statistic of `{python} f"{lrt_stat:.2f}"` with `{python} f"{lrt_df}"` degrees of freedom (p = `{python} f"{lrt_pvalue:.3f}"`). Since p < 0.05, we reject the null hypothesis and conclude that the interaction terms jointly improve model fit in a statistically meaningful way. Looking at individual coefficients, `Contract1_x_NoInternet` was the only interaction term significant at the 0.05 level (p = 0.018), meaning that one-year contract holders with no internet service have a meaningfully lower churn probability than the month-to-month DSL reference group, beyond what either variable explains on its own. The other three interaction terms (`Contract2_x_FiberOptic`, `Contract2_x_NoInternet`, and `Contract1_x_FiberOptic`) did not reach statistical significance individually (p = 0.18, 0.54, and 0.55 respectively), suggesting their effects are captured largely by the main contract and internet service terms already in the model.
 
 ### Threshold Tuning
 
@@ -404,44 +501,186 @@ cv_df['Std Dev'] = cv_df['Std Dev'].map('{:.4f}'.format)
 cv_df.style.hide(axis='index')
 ```
 
-The results are consistent across all five folds. The ROC-AUC averaged `{python} f"{cv_roc_mean:.4f}"` with a standard deviation of `{python} f"{cv_roc_std:.3f}"`,
-meaning that scores ranged roughly between 0.84 and 0.85 across folds, and indicating that
-the model is stable and not *overfitting* to the training data. A model that had simply memorized the training data would score well on training data but deteriorate on held-out chunks; the stability here indicates that is not happening. The cross-validation recall of 53.5% reflects the default threshold of 0.50 and is consistent with the threshold tuning results, at 0.30, recall rises to 79% as shown in the previous section.
-
-### Feature Importance
+The results are consistent across all five folds. The ROC-AUC averaged `{python} f"{cv_roc_mean:.4f}"` with a standard deviation of `{python} f"{cv_roc_std:.3f}"`, meaning scores ranged roughly between 0.84 and 0.85 across folds, indicating the model is stable and not *overfitting* to the training data. A model that had simply memorized the training data would score well on training data but deteriorate on held-out chunks; the stability here indicates that is not happening. The cross-validation recall of 53.5% reflects the default threshold of 0.50, the same threshold used in the classification report, and is consistent with the threshold tuning results: at threshold 0.30, churn recall rises to 75.1% as shown in the previous section.
 
 ```{python}
-#| label: feature-importance
-#| fig-cap: "Top 15 Feature Coefficients - Interaction Model"
+#| label: random-forest
+#| fig-cap: "Confusion Matrix and ROC Curve - Random Forest"
 
+from sklearn.ensemble import RandomForestClassifier
+
+# Train Random Forest on the same features as the interaction model
+rf = RandomForestClassifier(n_estimators=100, random_state=42)
+rf.fit(X_train_int_scaled, y_train)
+
+y_pred_rf  = rf.predict(X_test_int_scaled)
+y_proba_rf = rf.predict_proba(X_test_int_scaled)[:, 1]
+
+roc_auc_rf      = roc_auc_score(y_test, y_proba_rf)
+report_rf       = classification_report(y_test, y_pred_rf,
+                                        target_names=['No Churn','Churn'],
+                                        output_dict=True)
+accuracy_rf     = report_rf['accuracy']
+recall_rf       = report_rf['Churn']['recall']
+precision_rf    = report_rf['Churn']['precision']
+
+# Threshold tuning for Random Forest
+y_pred_rf_t30    = (y_proba_rf >= 0.30).astype(int)
+report_rf_t30    = classification_report(y_test, y_pred_rf_t30,
+                                         target_names=['No Churn','Churn'],
+                                         output_dict=True)
+recall_rf_t30    = report_rf_t30['Churn']['recall']
+precision_rf_t30 = report_rf_t30['Churn']['precision']
+accuracy_rf_t30  = report_rf_t30['accuracy']
+
+print("=== Random Forest Performance ===")
+print(f"ROC-AUC: {roc_auc_rf:.4f}")
+print(classification_report(y_test, y_pred_rf, target_names=['No Churn','Churn']))
+
+fig, axes = plt.subplots(1, 2, figsize=(12, 4))
+cm_rf = confusion_matrix(y_test, y_pred_rf)
+sns.heatmap(cm_rf, annot=True, fmt='d', cmap='Greens', ax=axes[0],
+            xticklabels=['No Churn','Churn'], yticklabels=['No Churn','Churn'])
+axes[0].set_title('Confusion Matrix - Random Forest')
+axes[0].set_ylabel('Actual')
+axes[0].set_xlabel('Predicted')
+RocCurveDisplay.from_predictions(y_test, y_proba_rf, ax=axes[1], color='seagreen')
+axes[1].plot([0,1],[0,1],'k--')
+axes[1].set_title('ROC Curve - Random Forest')
+plt.tight_layout()
+plt.show()
+
+# Comparison table
+comparison = pd.DataFrame({
+    'Metric': ['ROC-AUC', 'Accuracy (t=0.50)', 'Churn Recall (t=0.50)',
+               'Churn Recall (t=0.30)', 'Churn Precision (t=0.30)'],
+    'Logistic Regression': [f"{roc_auc_int:.4f}", f"{accuracy_int:.1%}",
+                             f"{churn_recall_int:.1%}", f"{t30_recall:.1%}",
+                             f"{t30_precision:.1%}"],
+    'Random Forest':       [f"{roc_auc_rf:.4f}", f"{accuracy_rf:.1%}",
+                             f"{recall_rf:.1%}", f"{recall_rf_t30:.1%}",
+                             f"{precision_rf_t30:.1%}"]
+})
+comparison.style.hide(axis='index')
+```
+
+### Random Forest Comparison
+
+To evaluate whether a more flexible model improves on the logistic regression, we trained
+a Random Forest classifier on the same feature set. Random Forest builds many decision
+trees on random subsets of the data and averages their predictions, which allows it to
+capture non-linear relationships and complex interactions without requiring them to be
+specified manually.^[Unlike logistic regression, Random Forest does not assume a linear
+relationship between features and the log-odds of churn. It can detect patterns that
+logistic regression misses, at the cost of interpretability. Coefficients with a clear
+directional meaning are replaced by feature importance scores that measure how much each
+variable reduces prediction error across all trees.] The table above compares the two models directly.
+
+The Random Forest achieved a ROC-AUC of `{python} f"{roc_auc_rf:.4f}"`, compared to `{python} f"{roc_auc_int:.4f}"` for the logistic regression which is a meaningful gap in overall discriminative ability. At the default threshold of 0.50, the Random Forest also underperformed on recall (`{python} f"{recall_rf:.1%}"` vs. `{python} f"{churn_recall_int:.1%}"`) and accuracy (`{python} f"{accuracy_rf:.1%}"` vs. `{python} f"{accuracy_int:.1%}"`). At threshold 0.30, the two models converge closely: the Random Forest reaches `{python} f"{recall_rf_t30:.1%}"` churn recall vs. `{python} f"{t30_recall:.1%}"` for logistic regression, with nearly identical precision (`{python} f"{precision_rf_t30:.1%}"` vs. `{python} f"{t30_precision:.1%}"`). The McNemar's test in the next section confirms whether this remaining difference is statistically meaningful.
+
+```{python}
+#| label: rf-feature-importance
+#| fig-cap: "Feature Importance Comparison: Random Forest vs. Logistic Regression"
+
+# Random Forest feature importances
+rf_importance = pd.DataFrame({
+    'Feature':    X_train_int.columns,
+    'Importance': rf.feature_importances_
+}).sort_values('Importance', ascending=False).head(15)
+
+# Logistic Regression top 15 coefficients by absolute value
 feature_names = list(X_train_int.columns)
 coef_df = pd.DataFrame({
-    'Feature': feature_names,
+    'Feature':     feature_names,
     'Coefficient': lr_int.coef_[0]
 }).sort_values('Coefficient', key=abs, ascending=False).head(15)
 
 top_pos_feature = coef_df[coef_df['Coefficient'] > 0].iloc[0]
 top_neg_feature = coef_df[coef_df['Coefficient'] < 0].iloc[0]
 
-plt.figure(figsize=(10, 7))
-colors = ['tomato' if c > 0 else 'steelblue' for c in coef_df['Coefficient']]
-plt.barh(coef_df['Feature'], coef_df['Coefficient'], color=colors)
-plt.axvline(0, color='black', linewidth=0.8)
-plt.title('Top 15 Feature Coefficients - Interaction Model',
-          fontsize=13, fontweight='bold')
-plt.xlabel('Coefficient (log-odds)')
-plt.gca().invert_yaxis()
+fig, axes = plt.subplots(1, 2, figsize=(16, 7))
+
+# Left: Random Forest importance
+axes[0].barh(rf_importance['Feature'], rf_importance['Importance'], color='seagreen')
+axes[0].set_title('Random Forest\nFeature Importance', fontweight='bold')
+axes[0].set_xlabel('Mean Decrease in Impurity')
+axes[0].invert_yaxis()
+
+# Right: Logistic Regression coefficients
+lr_colors = ['tomato' if c > 0 else 'steelblue' for c in coef_df['Coefficient']]
+axes[1].barh(coef_df['Feature'], coef_df['Coefficient'], color=lr_colors)
+axes[1].axvline(0, color='black', linewidth=0.8)
+axes[1].set_title('Logistic Regression\nCoefficients (log-odds)', fontweight='bold')
+axes[1].set_xlabel('Coefficient')
+axes[1].invert_yaxis()
+
+plt.suptitle('Feature Importance Comparison', fontsize=13, fontweight='bold', y=1.02)
 plt.tight_layout()
 plt.show()
 ```
 
-Red bars indicate variables that increase the likelihood of churn, while blue bars indicate variables that reduce it. `MonthlyCharges` (`{python} f"{top_pos_feature['Coefficient']:+.2f}"`) and `tenure` (`{python} f"{top_neg_feature['Coefficient']:+.2f}"`) remain the two strongest individual predictors. Among the interaction terms, two-year fiber optic customers show the highest churn risk of all contract-service combinations, which may reflect customers locked into long-term contracts who feel under-served by their internet service. In contrast, customers on long-term contracts with no internet service show the lowest churn, suggesting that simpler, phone-only plans attract a more stable customer base.
+Both models agree on the most important drivers of churn. `tenure` and contract type (`Contract_Two year`, `Contract_One year`) rank among the top predictors in both models, as does `InternetService_Fiber optic`. This convergence across two fundamentally different modeling approaches strengthens confidence that these variables reflect genuine patterns in the data rather than model-specific artifacts.
+
+```{python}
+#| label: mcnemar-test
+
+from statsmodels.stats.contingency_tables import mcnemar
+
+# Get predictions from both models at threshold 0.30
+y_pred_lr_t30 = (y_proba_int >= 0.30).astype(int)
+y_pred_rf_t30 = (y_proba_rf >= 0.30).astype(int)
+
+# Build contingency table
+both_correct = ((y_pred_lr_t30 == y_test) & (y_pred_rf_t30 == y_test)).sum()
+lr_only      = ((y_pred_lr_t30 == y_test) & (y_pred_rf_t30 != y_test)).sum()
+rf_only      = ((y_pred_lr_t30 != y_test) & (y_pred_rf_t30 == y_test)).sum()
+both_wrong   = ((y_pred_lr_t30 != y_test) & (y_pred_rf_t30 != y_test)).sum()
+
+contingency_table = [[both_correct, lr_only],
+                     [rf_only,      both_wrong]]
+
+result = mcnemar(contingency_table, exact=False, correction=True)
+
+mcnemar_stat   = result.statistic
+mcnemar_pvalue = result.pvalue
+
+print("McNemar's Test Results")
+print(f"Contingency table: {contingency_table}")
+print(f"Chi-squared statistic: {mcnemar_stat:.4f}")
+print(f"p-value: {mcnemar_pvalue:.4f}")
+```
+
+### Statistical Model Comparison
+
+Comparing two models by looking at their metrics alone does not tell you whether the 
+difference in performance is statistically meaningful or just due to chance. **McNemar's 
+test** addresses this directly: rather than comparing overall accuracy, it looks specifically 
+at the cases where the two models *disagree* (where one got it right and the other got 
+it wrong). ^[McNemar's test is the standard non-parametric test for comparing two classifiers 
+evaluated on the same test set. It builds a 2×2 contingency table of agreements and 
+disagreements between the two models, and tests whether the off-diagonal cells (the 
+cases where only one model was correct) are symmetric. A p-value below 0.05 indicates 
+the two models make meaningfully different errors, i.e. the performance difference is 
+unlikely to be due to chance. It is preferred over a simple accuracy comparison because 
+it accounts for the paired nature of the predictions.]
+
+Both models were evaluated at threshold 0.30, consistent with the threshold tuning 
+results above. A p-value below 0.05 would indicate the two models make meaningfully 
+different errors and that the performance gap is statistically significant.
+
+The test yielded a chi-squared statistic of `{python} f"{mcnemar_stat:.2f}"` and a p-value of `{python} f"{mcnemar_pvalue:.3f}"`. Since p > 0.05, we cannot conclude that the two models make meaningfully different errors on this test set since the performance gap is not statistically significant. This is an important finding: despite the Random Forest's added flexibility, it does not outperform the simpler logistic regression in a way that can be distinguished from chance. Given that logistic regression also offers interpretable coefficients and p-values that directly support the inferential goal of this analysis, it is the preferred model for this use case.
+
+### Feature Importance
+
+Red bars in the logistic regression coefficient chart indicate variables that increase the likelihood of churn, while blue bars indicate variables that reduce it. `MonthlyCharges` (`{python} f"{top_pos_feature['Coefficient']:+.2f}"`) and `tenure` (`{python} f"{top_neg_feature['Coefficient']:+.2f}"`) remain the two strongest individual predictors. Among the interaction terms, two-year fiber optic customers show the highest churn risk of all contract-service combinations, which may reflect customers locked into long-term contracts who feel under-served by their internet service. In contrast, customers on long-term contracts with no internet service show the lowest churn, suggesting that simpler, phone-only plans attract a more stable customer base.
 
 ## Conclusions
 
-The logistic regression model shows that churn in this telecom dataset is quite predictable. At the default threshold, the interaction model achieves an ROC-AUC of `{python} f"{roc_auc_int:.4f}"` and overall accuracy of `{python} f"{accuracy_int:.1%}"`. By lowering the classification threshold to `0.30`, the model meets the project's churn recall target of `75%`. Cross-validation confirms these results hold across different subsets of the data, with a stable ROC-AUC of `{python} f"{cv_roc_mean:.4f}"` across five folds.
+The logistic regression model shows that churn in this telecom dataset is quite predictable. At the default threshold, the interaction model achieves an ROC-AUC of `{python} f"{roc_auc_int:.4f}"` and overall accuracy of `{python} f"{accuracy_int:.1%}"`. By lowering the classification threshold to `0.30`, the model meets the project's churn recall target of 75%. Cross-validation confirms these results hold across different subsets of the data, with a stable ROC-AUC of `{python} f"{cv_roc_mean:.4f}"` across five folds.
 
 Three findings stand out. First, contract type is the clearest signal: month-to-month customers churn at `{python} f"{mtm_churn:.1%}"`, compared to `{python} f"{two_yr_churn:.1%}"` for customers on two-year contracts. Second, monthly charges consistently increase churn risk, which points to price sensitivity as a real factor. Third, tenure works in the opposite direction: customers who have been around longer are much less likely to leave. This means early retention efforts are especially valuable.
+
+The Likelihood Ratio Test confirmed that the interaction terms jointly improve model fit (p = `{python} f"{lrt_pvalue:.3f}"`), though only one of the four individual interaction terms (one-year contract holders with no internet service) reached statistical significance on its own. Comparing the logistic regression against a Random Forest showed that the more flexible model did not produce meaningfully better predictions: the McNemar's test returned p = `{python} f"{mcnemar_pvalue:.3f}"`, and both models agreed on the same top predictors. This convergence supports choosing the simpler, more interpretable logistic regression for this use case.
 
 ## Practical Implications
 
