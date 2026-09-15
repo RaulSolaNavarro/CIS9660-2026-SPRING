@@ -3,8 +3,12 @@ project:
   output-dir: _site
   execute-dir: project
 
+
 website:
   title: "CIS 9660 - Group 2 Project"
+  site-url: "https://raulsolanavarro.github.io/CIS9660-2026-SPRING/"
+  open-graph: true
+  image: figures/social-preview.png
   navbar:
     left:
       - text: "Proposal Slides"
